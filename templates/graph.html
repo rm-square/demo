@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Wissensgraph — Hartmann Antriebstechnik</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #060b16; color: #e2e8f0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+.topbar { display: flex; align-items: center; gap: 16px; padding: 0 20px; height: 50px; border-bottom: 1px solid #1a2535; flex-shrink: 0; background: #080d18; }
+.topbar-title { font-size: 14px; font-weight: 700; color: #f8fafc; }
+.topbar-sub { font-size: 11px; color: #475569; margin-top: 1px; }
+.topbar-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.tb-btn { padding: 4px 11px; border-radius: 5px; border: 1px solid #1e2535; background: #0f1829; color: #94a3b8; font-size: 11px; cursor: pointer; text-decoration: none; transition: all 0.12s; }
+.tb-btn:hover { background: #1a2b45; color: #e2e8f0; border-color: #3b82f6; }
+
+.legend { position: absolute; top: 10px; left: 16px; z-index: 20; background: rgba(8,13,24,0.95); border: 1px solid #1a2535; border-radius: 10px; padding: 13px 15px; }
+.leg-title { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #475569; margin-bottom: 9px; font-weight: 700; }
+.leg-item { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; font-size: 11px; color: #94a3b8; }
+.leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.leg-line { width: 18px; height: 2px; flex-shrink: 0; }
+.leg-sep { border-top: 1px solid #1a2535; margin: 7px 0; }
+.leg-hint { font-size: 10px; color: #374151; margin-top: 5px; line-height: 1.5; }
+
+.stats-bar { position: absolute; top: 10px; right: 16px; z-index: 20; display: flex; gap: 8px; transition: right 0.25s cubic-bezier(0.4,0,0.2,1); }
+.stats-bar.panel-open { right: 336px; }
+.s-pill { background: rgba(8,13,24,0.95); border: 1px solid #1a2535; border-radius: 7px; padding: 7px 13px; text-align: center; }
+.s-num { font-size: 17px; font-weight: 700; color: #60a5fa; line-height: 1; }
+.s-lbl { font-size: 9px; color: #475569; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+#svg-container { flex: 1; position: relative; overflow: hidden; }
+svg { width: 100%; height: 100%; }
+
+.link { pointer-events: stroke; }
+.link.child-link { stroke-dasharray: 3,3; }
+.link.dimmed { opacity: 0.04 !important; }
+
+.node { cursor: pointer; }
+.node.dimmed { opacity: 0.07; }
+.node.selected > circle.main { stroke-width: 3.5 !important; }
+.node.selected > circle.sel-ring { opacity: 1 !important; }
+.node.expanded > circle.main { stroke-width: 2.5 !important; }
+.node.is-child > circle.main { stroke-dasharray: 4,2; }
+.node text { pointer-events: none; user-select: none; }
+
+.tooltip { position: absolute; background: rgba(6,11,22,0.98); border: 1px solid #2a3a52; border-radius: 10px; padding: 13px 15px; pointer-events: none; opacity: 0; transition: opacity 0.12s; max-width: 270px; z-index: 100; box-shadow: 0 10px 40px rgba(0,0,0,0.7); }
+.tooltip.vis { opacity: 1; }
+.tt-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.tt-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.tt-name { font-size: 12.5px; font-weight: 600; color: #f1f5f9; }
+.tt-domain { font-size: 9.5px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+.tt-desc { font-size: 11.5px; color: #94a3b8; line-height: 1.5; margin-bottom: 7px; }
+.tt-meta { font-size: 10.5px; color: #64748b; }
+.tt-meta strong { color: #60a5fa; }
+.tt-conflict { margin-top: 5px; font-size: 10.5px; color: #fca5a5; }
+
+.edge-tt { position: absolute; background: rgba(6,11,22,0.98); border: 1px solid #7f1d1d; border-radius: 7px; padding: 9px 13px; pointer-events: none; opacity: 0; transition: opacity 0.12s; max-width: 240px; z-index: 100; font-size: 11.5px; color: #fca5a5; box-shadow: 0 4px 20px rgba(239,68,68,0.2); }
+.edge-tt.vis { opacity: 1; }
+
+/* DETAIL PANEL */
+#detail-panel {
+  position: absolute; top: 0; right: 0; width: 320px; height: 100%;
+  background: #07101f; border-left: 1px solid #1a2535;
+  overflow-y: auto; transform: translateX(320px);
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+  z-index: 30; display: flex; flex-direction: column;
+}
+#detail-panel.visible { transform: translateX(0); }
+#detail-panel::-webkit-scrollbar { width: 4px; }
+#detail-panel::-webkit-scrollbar-track { background: transparent; }
+#detail-panel::-webkit-scrollbar-thumb { background: #1a2535; border-radius: 2px; }
+
+.dp-topbar {
+  position: sticky; top: 0; display: flex; align-items: center;
+  justify-content: space-between; padding: 9px 14px;
+  background: #07101f; border-bottom: 1px solid #1a2535; z-index: 1; flex-shrink: 0;
+}
+.dp-topbar-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px; color: #3b5070; font-weight: 700; }
+.dp-close { cursor: pointer; color: #3b5070; font-size: 13px; padding: 3px 8px; border-radius: 4px; border: 1px solid #1a2535; background: #0b1728; transition: all 0.12s; line-height: 1; }
+.dp-close:hover { color: #e2e8f0; border-color: #3b82f6; }
+
+.dp-header { padding: 15px 16px 13px 18px; border-bottom: 1px solid #0e1b2e; border-left: 4px solid; }
+.dp-label { font-size: 14px; font-weight: 700; color: #f1f5f9; line-height: 1.3; }
+.dp-domain { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 5px; font-weight: 600; }
+
+.dp-desc { padding: 12px 16px; font-size: 12px; color: #7a90a8; line-height: 1.7; border-bottom: 1px solid #0e1b2e; }
+
+.dp-section { border-top: 1px solid #0e1b2e; }
+.dp-sec-hd { display: flex; align-items: center; gap: 7px; padding: 11px 16px 6px; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #3b5070; font-weight: 700; }
+.dp-sec-hd.red { color: #ef4444; }
+.dp-sec-badge { background: #0e1b2e; border-radius: 8px; padding: 1px 7px; font-size: 9px; }
+.dp-sec-badge.red { background: rgba(239,68,68,0.15); color: #fca5a5; }
+
+.dp-child-item {
+  margin: 0 10px 5px; padding: 9px 11px 8px;
+  border-radius: 6px; background: #0a1525; border: 1px solid #131f30; border-left: 3px solid;
+  cursor: pointer; transition: background 0.1s;
+}
+.dp-child-item:hover { background: #0f1e35; }
+.dp-child-name { font-size: 11px; font-weight: 600; color: #c4d0e0; margin-bottom: 3px; }
+.dp-child-desc { font-size: 10.5px; color: #4a6070; line-height: 1.5; }
+
+.dp-conflict-item {
+  margin: 0 10px 5px; padding: 9px 11px;
+  border-radius: 6px; background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.18);
+  font-size: 11px; color: #fca5a5; line-height: 1.55;
+}
+
+.dp-conn-item {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin: 0 10px 5px; padding: 8px 10px;
+  border-radius: 6px; background: #0a1525; border: 1px solid #131f30;
+  cursor: pointer; transition: background 0.1s;
+}
+.dp-conn-item:hover { background: #0f1e35; }
+.dp-conn-item.is-conflict { border-color: rgba(239,68,68,0.25); background: rgba(239,68,68,0.04); }
+.dp-conn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.dp-conn-name { font-size: 11px; font-weight: 600; color: #c4d0e0; line-height: 1.3; }
+.dp-conn-rel { font-size: 10px; color: #3b5070; margin-top: 2px; line-height: 1.4; }
+
+.dp-expand-btn {
+  margin: 5px 10px 4px; padding: 8px 12px; border-radius: 6px;
+  background: #0b1829; border: 1px solid #1a2d45; color: #3b82f6;
+  font-size: 11px; cursor: pointer; text-align: center; transition: background 0.12s;
+}
+.dp-expand-btn:hover { background: #132038; }
+.dp-spacer { height: 20px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Wissensgraph — Hartmann Antriebstechnik GmbH</div>
+    <div class="topbar-sub" id="stats-sub">15 Dokumente · Klick auf Node für Details</div>
+  </div>
+  <div class="topbar-right">
+    <span class="tb-btn" onclick="collapseAll()">↺ Einklappen</span>
+    <span class="tb-btn" onclick="expandAll()">⊞ Aufklappen</span>
+    <span class="tb-btn" onclick="resetView()">⊙ Zentrieren</span>
+    <a href="/" class="tb-btn">← Chat</a>
+  </div>
+</div>
+
+<div id="svg-container">
+  <div class="legend">
+    <div class="leg-title">Legende</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#3b82f6"></div>Unternehmen</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#8b5cf6"></div>Produkte</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#f59e0b"></div>Commercial</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#ec4899"></div>Verträge / DoA</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#10b981"></div>Sales</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#06b6d4"></div>Marketing</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div>Kunden / CS</div>
+    <div class="leg-sep"></div>
+    <div class="leg-item"><div class="leg-line" style="background:#1e3a5f"></div>Verbindung</div>
+    <div class="leg-item"><div class="leg-line" style="background:#ef4444"></div>Konflikt</div>
+    <div class="leg-sep"></div>
+    <div class="leg-hint">Klick: Details + Aufklappen<br>Hintergrund: Auswahl aufheben<br>Drag: verschieben · Scroll: Zoom</div>
+  </div>
+  <div class="stats-bar" id="stats-bar">
+    <div class="s-pill"><div class="s-num" id="stat-nodes">15</div><div class="s-lbl">Nodes</div></div>
+    <div class="s-pill"><div class="s-num" id="stat-links">52</div><div class="s-lbl">Links</div></div>
+    <div class="s-pill"><div class="s-num" id="stat-exp">0</div><div class="s-lbl">Aufgeklappt</div></div>
+    <div class="s-pill"><div class="s-num" style="color:#fca5a5" id="stat-conf">5</div><div class="s-lbl">Konflikte</div></div>
+  </div>
+
+  <svg id="graph"></svg>
+
+  <div id="detail-panel">
+    <div class="dp-topbar">
+      <span class="dp-topbar-lbl">Node-Details</span>
+      <span class="dp-close" onclick="deselectNode()">✕</span>
+    </div>
+    <div id="dp-content"></div>
+    <div class="dp-spacer"></div>
+  </div>
+</div>
+
+<div class="tooltip" id="tt"></div>
+<div class="edge-tt" id="ett"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════
+
+const PARENTS = [
+  { id:"firmenprofil", short:"Firma",       label:"Firmenprofil",            domain:"Unternehmen",  color:"#3b82f6", desc:"720 MA, €95M Umsatz, Org-Struktur (CEO/CFO/CRO/CPO/CMO/COO), ICP, 4 Wettbewerber" },
+  { id:"messen",       short:"Messen",      label:"Messen & Events 2025",    domain:"Unternehmen",  color:"#3b82f6", desc:"7 Messen, €380K Budget. SPS abgeschlossen. Hannover läuft (5–9 Mai). Automatica, EMO geplant." },
+  { id:"produkte",     short:"Produkte",    label:"Produktportfolio",        domain:"Produkte",     color:"#8b5cf6", desc:"3 Linien: PrecisionDrive, ServoDrive X, CareConnect. 16 Varianten. Q1/2025 Neuheiten inkl. Safety-Integrated + TwinBus." },
+  { id:"roadmap",      short:"Roadmap",     label:"Roadmap 2025/26",         domain:"Produkte",     color:"#8b5cf6", desc:"Q2–Q4 Releases. Was darf kommuniziert werden? 5 bekannte Limitierungen. EOL-Ankündigungen." },
+  { id:"preisliste",   short:"Preise",      label:"Preisliste 2025",         domain:"Commercial",   color:"#f59e0b", desc:"Alle Listenpreise, 4 Rabattstufen (0–18%), Zahlungsbedingungen, Ersatzteilpreise" },
+  { id:"dealdesk",     short:"Deal Desk",   label:"Deal Desk Prozess",       domain:"Commercial",   color:"#f59e0b", desc:"Angebotsprozess, DB-Mindestgrenzen (28–45%), häufige Fehler, 5 Deal-Typen" },
+  { id:"quota",        short:"Pipeline",    label:"Quota & Pipeline",        domain:"Commercial",   color:"#f59e0b", desc:"€98M Jahresziel. 72 offene Deals, €7,4M Pipeline. Forecast-Accuracy 87%. 3 AEs unter Plan." },
+  { id:"doa",          short:"DoA",         label:"Delegation of Authority", domain:"Verträge/DoA", color:"#ec4899", desc:"Freigabestufen: Rabatte, Zahlungsziele, Vertragsabschlüsse, Kulanz, Personal" },
+  { id:"vertragsklauseln", short:"Klauseln",label:"Vertragsklauseln",        domain:"Verträge/DoA", color:"#ec4899", desc:"Lieferung, Gewährleistung, Haftung, DSGVO/AVV, was braucht CFO-Freigabe" },
+  { id:"salesplays",   short:"Sales Plays", label:"Sales Plays",             domain:"Sales",        color:"#10b981", desc:"3 Plays: New Logo, Expansion/Upsell, Competitive Displacement. KPIs + Einwand-Handling." },
+  { id:"battlecards",  short:"Battle Cards",label:"Battle Cards",            domain:"Sales",        color:"#10b981", desc:"vs. SEW, vs. Siemens, vs. Bonfiglioli. Faktenbasierte Differenzierung + TCO-Argument." },
+  { id:"leads",        short:"Leads",       label:"Lead Management",         domain:"Marketing",    color:"#06b6d4", desc:"MQL/SQL-Definitionen, 24h SLA (38% Verstoß), 3 aktive Kampagnen, Content-Bibliothek" },
+  { id:"accounts",     short:"Accounts",    label:"Kundenaccounts",          domain:"Kunden/CS",    color:"#ef4444", desc:"5 Accounts: Müller, Brenner, Zeller, KME, Bergmann. Deal-Historien + Signale." },
+  { id:"csdashboard",  short:"CS Dashboard",label:"CS Dashboard Q1/25",      domain:"Kunden/CS",    color:"#ef4444", desc:"3 offene Eskalationen, NPS 52, 23 Renewals Q2/Q3, fehlende Teamlead-Stelle" },
+  { id:"rfp",          short:"RFP Brenner", label:"RFP Brenner Bratislava",  domain:"Kunden/CS",    color:"#ef4444", desc:"€740K RFQ. 60x SDX-22 SI + 30x PD-3000 + CareConnect 36M. Frist 23. Mai. Siemens Wettbewerber." },
+];
+
+const CHILDREN = [
+  // Firmenprofil
+  { id:"firm-cro", short:"CRO A.Vogt",    label:"CRO Andreas Vogt",      parent:"firmenprofil", color:"#3b82f6", desc:"Leitet 35 Vertrieb: 22 AEs DACH, 6 Benelux, 5 KAMs, 8 SDRs, 9 CSMs. Seit 2023." },
+  { id:"firm-cpo", short:"CPO J.Brenner", label:"CPO Dr. Julia Brenner", parent:"firmenprofil", color:"#3b82f6", desc:"Produktmanagement, 4 PMs, F&E TU München + Fraunhofer." },
+  { id:"firm-cmo", short:"CMO S.Riedel",  label:"CMO Stefan Riedel",     parent:"firmenprofil", color:"#3b82f6", desc:"Marketing DACH, Messen & Events (€380K Budget), Digital Marketing." },
+  { id:"firm-coo", short:"COO M.Preis",   label:"COO Markus Preis",      parent:"firmenprofil", color:"#3b82f6", desc:"3 Werke: Augsburg (Getriebe), Regensburg (Servo), Bratislava (Montage)." },
+  // Messen
+  { id:"messe-sps",        short:"SPS Feb",       label:"SPS Feb 2025 ✓",         parent:"messen", color:"#3b82f6", desc:"Abgeschlossen: 187 Leads → 42 MQLs → 8 Opportunities. €290K Pipeline." },
+  { id:"messe-hannover",   short:"Hannover 🔴",    label:"Hannover Messe (läuft)", parent:"messen", color:"#3b82f6", desc:"5–9 Mai. Halle 14, C22. 3 Kundentermine: Brenner (Di), Zeller (Mi), Waldmann (Do)." },
+  { id:"messe-automatica", short:"Automatica",     label:"Automatica Jun 2025",    parent:"messen", color:"#3b82f6", desc:"24–27 Jun München. €52K Budget. Fokus SDX Cobot-Linie (UR5e Demo)." },
+  { id:"messe-emo",        short:"EMO Sep",        label:"EMO Sep 2025",           parent:"messen", color:"#3b82f6", desc:"22–26 Sep Hannover. €78K Budget. Werkzeugmaschinen-Fokus." },
+  // Produkte
+  { id:"prod-pd",       short:"PrecisionDrive", label:"PrecisionDrive",  parent:"produkte", color:"#8b5cf6", desc:"PD-200 bis PD-3000 (200–3000 Nm). IP65/67. Lebensdauerschmierung. Neu: Edelstahl + DigiLink." },
+  { id:"prod-sdx",      short:"ServoDrive X",   label:"ServoDrive X",    parent:"produkte", color:"#8b5cf6", desc:"SDX-0.5 bis SDX-22 (0.5–22 kW). Safety-Integrated. TwinBus PROFINET+EtherCAT. One-Cable." },
+  { id:"prod-cc",       short:"CareConnect",    label:"CareConnect",     parent:"produkte", color:"#8b5cf6", desc:"Base/Plus/Premium Wartungsverträge. Predictive Failure Score (CC-Premium). Auto-Staging." },
+  { id:"prod-digilink", short:"PD-DigiLink",    label:"PD-DigiLink IoT", parent:"produkte", color:"#8b5cf6", desc:"IoT-Modul: Temp + Betriebsstunden (v1). Vibrations-Fingerprint kommt mit v2.0 (Q3/2025)." },
+  // Roadmap
+  { id:"road-q2",     short:"Q2 Releases",  label:"Q2/2025 Releases",        parent:"roadmap", color:"#8b5cf6", desc:"DigiLink v2.0 Beta → GA, SDX Cloud Multi-Site Dashboard, CareConnect App iOS/Android." },
+  { id:"road-q3",     short:"Q3 Releases",  label:"Q3/2025 Releases",        parent:"roadmap", color:"#8b5cf6", desc:"SDX-22 High-Torque 180Nm, CareConnect automatischer Eskalations-Workflow." },
+  { id:"road-q4",     short:"Q4 Releases",  label:"Q4/2025 Releases",        parent:"roadmap", color:"#8b5cf6", desc:"PD-3000 DigiLink Standard (kein Aufpreis), SDX EtherCAT-only Variante günstiger." },
+  { id:"road-limits", short:"5 Limits ⚠️", label:"5 Bekannte Limitierungen", parent:"roadmap", color:"#8b5cf6", desc:"SDX-Cloud <5 Antriebe leer · DigiLink v1 kein Vibration · TwinBus SDX-22 Feldtest · CC-App fehlt · Bratislava 2 Techniker." },
+  // Preisliste
+  { id:"preis-pd",      short:"PD Preise",     label:"PrecisionDrive Preise",  parent:"preisliste", color:"#f59e0b", desc:"PD-200 €1.480 · PD-500 €2.890 · PD-1200 €5.200 · PD-3000 €9.800 (DigiLink +€760–1.400)" },
+  { id:"preis-sdx",     short:"SDX Preise",    label:"ServoDrive X Preise",    parent:"preisliste", color:"#f59e0b", desc:"SDX-0.5 €1.240 · SDX-2 €2.150 · SDX-7 €3.900 · SDX-22 €7.200 (SI +€350–1.400)" },
+  { id:"preis-cc",      short:"CC Preise",     label:"CareConnect Jahrespreise",parent:"preisliste",color:"#f59e0b", desc:"Base €4.800–12.000 · Plus €12.000–24.000 · Premium €28.000–75.000 p.a." },
+  { id:"preis-rabatt",  short:"Rabattstruktur",label:"Rabattstruktur",         parent:"preisliste", color:"#f59e0b", desc:"≤5%: AE autonom · 5–10%: Reg.Mgr · 10–15%: CRO · 15–18%: CRO+CFO (DB≥28%) · >18%: CEO" },
+  // Deal Desk
+  { id:"dd-prozess", short:"Angebotsprozess", label:"Angebotsprozess",   parent:"dealdesk", color:"#f59e0b", desc:"HubSpot Quotes → Preisliste → Freigabe laut DoA → Versand. Kein Word/Excel außerhalb." },
+  { id:"dd-db",      short:"DB-Grenzen",      label:"DB-Mindestgrenzen", parent:"dealdesk", color:"#f59e0b", desc:"Hardware ≥32% · Engineering ≥28% · CareConnect ≥45% · Bundle ≥30% · Strategisch: ≥22%" },
+  { id:"dd-fehler",  short:"Häufige Fehler",  label:"Top-4 Fehler",      parent:"dealdesk", color:"#f59e0b", desc:"Alte Preisliste · Lieferzeit ohne COO-Check · Zahlungsziel mündlich · CC-Preis ohne Anzahl Antriebe" },
+  { id:"dd-pipeline",short:"72 Deals €7,4M",  label:"Pipeline-Übersicht",parent:"dealdesk", color:"#f59e0b", desc:"Qualifizierung 28 · Angebot 19 · Versandt 14 · Verhandlung 8 · Abschluss 3. Accuracy: 87%" },
+  // Quota
+  { id:"pipe-brenner",  short:"Brenner €740K", label:"Brenner Bratislava €740K", parent:"quota", color:"#f59e0b", desc:"Größter Deal. Stage: Angebotsvorbereitung. Siemens Wettbewerber. RFQ-Frist 23. Mai." },
+  { id:"pipe-heider",   short:"Heider €185K",  label:"Heider GmbH €185K",        parent:"quota", color:"#f59e0b", desc:"Stage: Verhandlung. Risiko: neuer Entscheider kennt Hartmann nicht." },
+  { id:"pipe-schaefer", short:"Schäfer €92K",  label:"Automation Schäfer €92K",  parent:"quota", color:"#f59e0b", desc:"Stage: Angebot versandt. SEW soll 12% günstiger sein → Battle Card aktivieren." },
+  { id:"pipe-gap",      short:"Quota-Gap ⚠️",  label:"Quota-Gap Q2/2025",        parent:"quota", color:"#f59e0b", desc:"3 AEs unter Plan: Schreiber –€145K, Engel –€155K, Hofmann –€345K (Elternzeit). Benelux –€500K." },
+  // DoA
+  { id:"doa-rabatte",   short:"Rabattfreigaben", label:"Rabattfreigaben DoA",    parent:"doa", color:"#ec4899", desc:"≤5%: AE · 5–10%: Reg.Mgr · 10–15%: CRO · 15–18%: CRO+CFO DB≥28% · >18%: CEO-Antrag" },
+  { id:"doa-zahlung",   short:"Zahlungsziele",   label:"Zahlungsziele DoA",      parent:"doa", color:"#ec4899", desc:"≤30T: Standard · ≤45T: AE+Reg.Mgr · 46–60T: CRO+CFO · >60T: CFO+CEO+Bonitätsprüfung" },
+  { id:"doa-vertraege", short:"Vertragsabschluss",label:"Vertragsabschlüsse DoA",parent:"doa", color:"#ec4899", desc:"≤€25K: AE · ≤€100K: Reg.Mgr · ≤€500K: CRO · >€500K: CRO+CFO oder CEO" },
+  { id:"doa-kulanz",    short:"Kulanz",           label:"Kulanz/Vergleiche DoA",  parent:"doa", color:"#ec4899", desc:"≤€5K: CSM/Reg.Mgr · ≤€25K: CRO · >€25K: CRO+CFO" },
+  // Vertragsklauseln
+  { id:"kl-lieferung", short:"Lieferbedingungen",label:"Lieferbedingungen",   parent:"vertragsklauseln", color:"#ec4899", desc:"EXW Augsburg. Verzug: 0,5%/Woche max 5% Gesamtwert. Höhere Gewalt-Ausschluss." },
+  { id:"kl-zahlung",   short:"Zahlung",           label:"Zahlungsbedingungen",parent:"vertragsklauseln", color:"#ec4899", desc:"30T netto Standard · 2% Skonto/10T · Projekte >€200K: 30% Anzahlung Pflicht." },
+  { id:"kl-haftung",   short:"Haftung",           label:"Haftungsregelung",   parent:"vertragsklauseln", color:"#ec4899", desc:"Max Auftragswert / max €500K je Ereignis. Kein entgangener Gewinn. Personenschäden: unbegrenzt." },
+  { id:"kl-dsgvo",     short:"DSGVO/AVV",         label:"DSGVO / AVV",        parent:"vertragsklauseln", color:"#ec4899", desc:"Maschinendaten ≠ Personendaten (kein AVV nötig). Ausnahme: Produktionszahlen → AVV-Template." },
+  // Sales Plays
+  { id:"play-newlogo",     short:"New Logo Play",    label:"Play 1: New Logo",                parent:"salesplays", color:"#10b981", desc:"3 Phasen: Tech-Quali → Kommerz. Einstieg → Abschluss. Ziel: ≥€80K + CC-Base. Cycle <9W." },
+  { id:"play-expansion",   short:"Expansion Play",   label:"Play 2: Expansion/Upsell",        parent:"salesplays", color:"#10b981", desc:"Trigger: Renewal, CS-Eskalation, New Project. CC-Upgrade-Pfad + 36M Laufzeit-Hebel." },
+  { id:"play-competitive", short:"Competitive Play", label:"Play 3: Competitive Displacement", parent:"salesplays", color:"#10b981", desc:"Pilot-Taktik: 2–4 Antriebe außerhalb Rahmenvertrag. Pilot→Folgeauftrag Ziel: >70%." },
+  // Battle Cards
+  { id:"bc-sew",         short:"vs. SEW",         label:"Battle Card vs. SEW-Eurodrive", parent:"battlecards", color:"#10b981", desc:"PD-500 Lieferzeit SEW 6–8W vs. Hartmann 3W. SEW +6–9% Preiserhöhung Q1/25. Service über Drittpartner." },
+  { id:"bc-siemens",     short:"vs. Siemens",     label:"Battle Card vs. Siemens",       parent:"battlecards", color:"#10b981", desc:"SDX 15–25% günstiger. TwinBus nativ (kein Konverter). DSGVO EU-Vorteil. AI-Copilot-Konter." },
+  { id:"bc-bonfiglioli", short:"vs. Bonfiglioli", label:"Battle Card vs. Bonfiglioli",   parent:"battlecards", color:"#10b981", desc:"TCO-Argument: 1 Ausfall = >10x Preisdifferenz. Bonfiglioli Service DACH 48–72h." },
+  // Lead Management
+  { id:"lead-camp1", short:"Kampagne Antriebe",  label:"Kampagne: Smarte Antriebe",   parent:"leads", color:"#06b6d4", desc:"Laufend bis 30.6. Ziel 80 MQLs. Stand: 41 MQLs, 18 SQLs. Whitepaper 312x geladen." },
+  { id:"lead-camp2", short:"Kampagne CC",        label:"Kampagne: CareConnect",       parent:"leads", color:"#06b6d4", desc:"Laufend bis 31.8. Ziel 30 CC-Upgrades. Stand: 7. Trigger: ≥3 ungeplante Einsätze/Jahr." },
+  { id:"lead-camp3", short:"Hannover Follow-Up", label:"Kampagne: Hannover Follow-Up",parent:"leads", color:"#06b6d4", desc:"Ab 10. Mai. ~180 Badge-Scans. Marketing qualifiziert bis 13. Mai → AE 48h SLA." },
+  { id:"lead-sla",   short:"SLA-Problem 38%",    label:"SLA-Verstoß 38%",             parent:"leads", color:"#06b6d4", desc:"38% der SQLs werden nicht in 24h angerufen. Ursache: HubSpot-Notifications aus. Action Item offen." },
+  // Kundenaccounts
+  { id:"acc-mueller",  short:"Müller Masch.",      label:"Müller Maschinenbau Ingolstadt",parent:"accounts", color:"#ef4444", desc:"€187K/Jahr · 47x PD-500 + 12x SDX-2 SI · CC-Plus · Renewal Dez 2025 · QBR 15. Mai." },
+  { id:"acc-brenner",  short:"Brenner Auto.",       label:"Brenner Automotive Stuttgart", parent:"accounts", color:"#ef4444", desc:"€612K/Jahr · 180x SDX-22 + 94x PD-3000 · CC-Premium · RFQ Bratislava €740K offen." },
+  { id:"acc-zeller",   short:"Zeller Fördertech.",  label:"Zeller Fördertechnik Nürnberg",parent:"accounts", color:"#ef4444", desc:"€94K/Jahr · 28x PD-1200 + 14x PD-3000 · CC-Base · Renewal Aug · Wien-Projekt €210K." },
+  { id:"acc-kme",      short:"KME Kunststoff",      label:"KME Kunststofftechnik Ulm",    parent:"accounts", color:"#ef4444", desc:"€31K/Jahr · 8x SDX-2 SI · kein CC · E-Code 0x4210 offen · Wechselrisiko zu SEW." },
+  { id:"acc-bergmann", short:"Bergmann & Söhne",    label:"Bergmann & Söhne Bielefeld",   parent:"accounts", color:"#ef4444", desc:"€22K/Jahr · 6x PD-200 Edelstahl · kein CC · AE in Elternzeit · Inbound €41K offen!" },
+  // CS Dashboard
+  { id:"esc-kme",        short:"Esk. KME",        label:"Eskalation #0312 KME",       parent:"csdashboard", color:"#ef4444", desc:"SDX-2 E-Code 0x4210 seit Feb. 3 Ausfälle. Techniker 08.Mai. Kunde: 'bereuen SEW verlassen'." },
+  { id:"esc-mueller",    short:"Esk. Müller",      label:"Eskalation #0287 Müller",    parent:"csdashboard", color:"#ef4444", desc:"SLA-Verletzung: PD-500 Ersatzteil nach 36h (SLA: 24h). Koch wartet auf QBR als Druckmittel." },
+  { id:"esc-bratislava", short:"Esk. Bratislava",  label:"Eskalation #0341 Bratislava",parent:"csdashboard", color:"#ef4444", desc:"RFQ fordert 8h SLA Bratislava. Aktuell nur 2 Techniker. COO: 3 neue bis Q3 genehmigt." },
+  { id:"esc-renewals",   short:"23 Renewals",      label:"23 Renewals Watchlist",      parent:"csdashboard", color:"#ef4444", desc:"Hochrisiko: KME (kein CC), Müller (SLA-Konflikt), Hörmann (kein Kontakt 4M), Zeller (Upsell)." },
+  // RFP
+  { id:"rfp-pos1",    short:"Pos.1: 60x SDX-22",   label:"RFQ Pos.1: 60x SDX-22 SI",       parent:"rfp", color:"#ef4444", desc:"Pflicht: PROFINET+EtherCAT NATIV, SIL2, IP65, Multiturn-Absolutencoder, batterieloses. DSGVO Remote." },
+  { id:"rfp-pos2",    short:"Pos.2: 30x PD-3000",  label:"RFQ Pos.2: 30x PD-3000",          parent:"rfp", color:"#ef4444", desc:"Pflicht: ≤1' Spiel, Lebensdauerschmierung, IP65, Flanschkompatibel SDX-22. Wunsch: IoT-fähig." },
+  { id:"rfp-pos3",    short:"Pos.3: CareConnect",  label:"RFQ Pos.3: CareConnect 36M",       parent:"rfp", color:"#ef4444", desc:"8h Vor-Ort Bratislava, 24/7 Hotline, Ersatzteil 24h Standort, QBRs, DSGVO-Konformitätserklärung." },
+  { id:"rfp-terms",   short:"60T / kein Anz.",     label:"Kommerzielle Bedingungen RFQ",     parent:"rfp", color:"#ef4444", desc:"60T netto, keine Anzahlung. Lieferfrist 15. Sept (12 Wochen). Pönale 0,5%/W max 5%. Rahmenvertrag 3J." },
+  { id:"rfp-criteria",short:"Bewertungskriterien", label:"RFQ Bewertungskriterien",           parent:"rfp", color:"#ef4444", desc:"35% Technik · 30% Preis TCO3J · 20% Lieferzuverlässigkeit/Referenzen · 10% Service Bratislava · 5% CO₂." },
+];
+
+const PARENT_LINKS = [
+  { source:"firmenprofil", target:"messen",      label:"Stand-Team: CRO, CMO, CPO" },
+  { source:"firmenprofil", target:"quota",       label:"Umsatzziel €98M, Vertriebsstruktur" },
+  { source:"firmenprofil", target:"battlecards", label:"4 Wettbewerber definiert" },
+  { source:"firmenprofil", target:"salesplays",  label:"ICP-Definition, Zielkunden" },
+  { source:"firmenprofil", target:"leads",       label:"CMO + CRO verantwortlich" },
+  { source:"firmenprofil", target:"produkte",    label:"3 Erlössäulen: Hardware/After-Sales/CC" },
+  { source:"messen",       target:"leads",       label:"Hannover-Leads → HubSpot, 48h SLA" },
+  { source:"messen",       target:"accounts",    label:"Brenner-Termin + Zeller-Termin auf Stand" },
+  { source:"messen",       target:"battlecards", label:"SEW + Nord ebenfalls präsent" },
+  { source:"messen",       target:"roadmap",     conflict:true, label:"TwinBus Demo — noch nicht GA", conflictLabel:"🚨 SDX-22 TwinBus wird am Stand gezeigt, Felderprobung noch nicht abgeschlossen" },
+  { source:"produkte",     target:"preisliste",  label:"Listenpreise je Modell" },
+  { source:"produkte",     target:"roadmap",     label:"Q2–Q4 Releases, Limits, EOL" },
+  { source:"produkte",     target:"salesplays",  label:"Produktargumente, DigiLink-Upsell" },
+  { source:"produkte",     target:"battlecards", label:"TwinBus vs. Siemens, DigiLink vs. SEW" },
+  { source:"produkte",     target:"accounts",    label:"Installierte Basis je Account" },
+  { source:"produkte",     target:"csdashboard", label:"E-Code 0x4210, Bratislava-Kapazität" },
+  { source:"produkte",     target:"rfp",         label:"SDX-22 SI + PD-3000 im RFQ" },
+  { source:"roadmap",      target:"salesplays",  label:"Was darf versprochen werden?" },
+  { source:"roadmap",      target:"battlecards", label:"Safety-Integrated als Siemens-Argument" },
+  { source:"roadmap",      target:"accounts",    label:"DigiLink-Anfrage Müller-Konstrukteur" },
+  { source:"preisliste",   target:"doa",         label:"Rabattstufen = Freigabestufen" },
+  { source:"preisliste",   target:"dealdesk",    label:"DB-Mindestgrenzen, Kalkulation" },
+  { source:"preisliste",   target:"salesplays",  label:"Mengenrabatt als Verhandlungshebel" },
+  { source:"preisliste",   target:"battlecards", label:"TCO-Argument vs. Wettbewerb" },
+  { source:"preisliste",   target:"rfp",         label:"Kalkulation 60x SDX-22 + 30x PD-3000" },
+  { source:"preisliste",   target:"accounts",    label:"Jahresumsätze + Rabattstufen-Zuordnung" },
+  { source:"dealdesk",     target:"doa",         label:"Freigabepfad = DoA (>10% → Deal Desk)" },
+  { source:"dealdesk",     target:"vertragsklauseln", label:"Was kann Deal Desk freigeben?" },
+  { source:"dealdesk",     target:"quota",       label:"72 Deals, Stage-Profil, Forecast" },
+  { source:"dealdesk",     target:"rfp",         conflict:true, label:"60T + kein Anzahlung = CFO-Eskalation", conflictLabel:"🚨 Brenner RFQ: 60T netto + kein Anzahlung → überschreitet AE-Kompetenz (AE-Limit: 30T/30%)" },
+  { source:"quota",        target:"accounts",    label:"Brenner dominiert Key-Account-Forecast" },
+  { source:"quota",        target:"csdashboard", label:"23 Renewals Q2/Q3 = Pipeline-Komponente" },
+  { source:"quota",        target:"leads",       label:"SQLs → Opportunities → Pipeline" },
+  { source:"doa",          target:"vertragsklauseln", label:"Beide Schichten der Vertragshoheit" },
+  { source:"doa",          target:"rfp",         conflict:true, label:"RFQ-Bedingungen überschreiten AE-Kompetenz", conflictLabel:"🚨 60T Zahlungsziel + Anzahlungsverzicht >€200K → beide Punkte brauchen CFO-Freigabe" },
+  { source:"doa",          target:"csdashboard", label:"Kulanzfreigaben: ≤€5K CSM, ≤€25K CRO" },
+  { source:"vertragsklauseln", target:"rfp",     label:"Pönalen 0,5%/W — Brenner fordert selben Standard" },
+  { source:"salesplays",   target:"battlecards", label:"Einwand-Handling + Competitive-Vergleich" },
+  { source:"salesplays",   target:"accounts",    label:"Play 2 bei Müller/Zeller, Play 3 bei KME" },
+  { source:"salesplays",   target:"doa",         label:"Rabattfreigaben in Play-Prozess integriert" },
+  { source:"battlecards",  target:"rfp",         label:"Siemens Hauptwettbewerber Bratislava" },
+  { source:"leads",        target:"accounts",    label:"Lead → SQL → Opportunity → Account" },
+  { source:"leads",        target:"quota",       label:"38% SLA-Verstoß → Pipeline-Leck" },
+  { source:"accounts",     target:"csdashboard", conflict:true, label:"AE kennt CS-Eskalationen nicht", conflictLabel:"🚨 AE geht in QBR Müller am 15. Mai ohne Wissen über offene SLA-Verletzung + Koch's Druckmittel" },
+  { source:"accounts",     target:"rfp",         label:"Brenner ist RFQ-Absender (KAM Stern)" },
+  { source:"csdashboard",  target:"rfp",         conflict:true, label:"Bratislava: 2 Techniker, 8h SLA nicht erfüllbar", conflictLabel:"🚨 RFQ Pos.3 fordert 8h Vor-Ort Bratislava — intern aktuell nur 48h garantierbar (2 Techniker)" },
+  { source:"csdashboard",  target:"quota",       label:"Churn Q1: 2 Kündigungen, NRR 108%" },
+];
+
+const CROSS_LINKS = [
+  { source:"acc-mueller",    target:"esc-mueller",    conflict:true, label:"Offene SLA-Verletzung",          conflictLabel:"🚨 QBR 15.Mai: Koch nutzt Eskalation als Verhandlungshebel. AE weiß nichts davon." },
+  { source:"acc-kme",        target:"esc-kme",         conflict:true, label:"E-Code 0x4210 offen",            conflictLabel:"🚨 Neukunde droht Rückwechsel zu SEW. Service-Termin 08.Mai ist entscheidend." },
+  { source:"acc-brenner",    target:"esc-bratislava",  conflict:true, label:"Bratislava SLA nicht erfüllbar", conflictLabel:"🚨 Brenner RFQ fordert 8h SLA — aktuell nur 2 Techniker (48h realistisch)" },
+  { source:"acc-brenner",    target:"rfp-pos1",        label:"Brenner benötigt 60x SDX-22 SI" },
+  { source:"acc-brenner",    target:"rfp-pos2",        label:"Brenner benötigt 30x PD-3000" },
+  { source:"acc-brenner",    target:"rfp-terms",       conflict:true, label:"60T netto > AE-Kompetenz",       conflictLabel:"🚨 60T + kein Anzahlung = CRO+CFO Pflicht (AE-Limit: 30T/30% Anzahlung)" },
+  { source:"rfp-pos1",       target:"prod-sdx",        label:"SDX-22 Safety-Integrated im RFQ" },
+  { source:"rfp-pos2",       target:"prod-pd",         label:"PD-3000 im RFQ" },
+  { source:"rfp-pos3",       target:"prod-cc",         label:"CareConnect Premium 36M" },
+  { source:"rfp-pos1",       target:"road-limits",     conflict:true, label:"TwinBus SDX-22: Feldtest läuft noch", conflictLabel:"🚨 RFQ fordert PROFINET+EtherCAT nativ — SDX-22 TwinBus noch nicht vollständig freigegeben!" },
+  { source:"rfp-terms",      target:"doa-zahlung",     conflict:true, label:"60T überschreitet Kompetenz",    conflictLabel:"🚨 Brenner 60T → CRO+CFO Freigabe. Kein Anzahlung bei €740K → CFO Pflicht." },
+  { source:"rfp-pos3",       target:"esc-bratislava",  conflict:true, label:"8h SLA in Bratislava",           conflictLabel:"🚨 RFQ Pos.3 verlangt 8h Vor-Ort Bratislava — intern eskaliert, Personalaufbau läuft" },
+  { source:"bc-siemens",     target:"rfp-pos1",        label:"Siemens Hauptwettbewerber für SDX-22" },
+  { source:"bc-sew",         target:"prod-pd",         label:"SEW vs. PrecisionDrive Lieferzeit" },
+  { source:"bc-siemens",     target:"prod-sdx",        label:"SDX-TwinBus als Differenzierung" },
+  { source:"messe-hannover", target:"lead-camp3",      label:"Hannover Follow-Up Kampagne ab 10. Mai" },
+  { source:"esc-mueller",    target:"doa-kulanz",      label:"Kulanzgutschrift €800 → im CSM-Rahmen (≤€5K)" },
+  { source:"pipe-brenner",   target:"acc-brenner",     label:"Brenner = dominanter KA-Deal" },
+  { source:"road-q2",        target:"prod-digilink",   label:"DigiLink v2.0 kommt Q2 — Vibrations-Fingerprint" },
+  { source:"road-limits",    target:"prod-sdx",        label:"TwinBus + SDX-Cloud <5-Antriebe-Limit" },
+  { source:"acc-brenner",    target:"preis-sdx",       label:"60x SDX-22 SI × €8.600 = €516K Hardware" },
+  { source:"acc-brenner",    target:"preis-cc",        label:"CC-Premium 90 Antriebe: ~€75K p.a." },
+  { source:"lead-sla",       target:"pipe-gap",        label:"38% SLA-Verstoß → Pipeline-Leck" },
+  { source:"acc-bergmann",   target:"pipe-gap",        conflict:true, label:"Inbound €41K unbearbeitet",      conflictLabel:"🚨 Bergmann Inbound €41K — AE Lisa Hofmann in Elternzeit, Vertretung überlastet" },
+  { source:"rfp-criteria",   target:"bc-siemens",      label:"30% Preis-Kriterium: TCO-Argument vorbereiten" },
+  { source:"play-expansion", target:"acc-mueller",     label:"Expansion Play: CC-Plus → CC-Premium" },
+  { source:"play-competitive",target:"acc-kme",        label:"Competitive Play: Nach Reparatur CC pitchen" },
+  { source:"preis-rabatt",   target:"doa-rabatte",     label:"Preisliste + DoA definieren Rabattrahmen gemeinsam" },
+  { source:"kl-zahlung",     target:"doa-zahlung",     label:"Zahlungsklauseln gespiegelt in DoA" },
+  { source:"play-newlogo",   target:"bc-sew",          label:"New Logo Play: SEW-Verdrängung häufigste Situation" },
+  { source:"messe-hannover", target:"acc-brenner",     label:"Geplanter KA-Termin Di 10:00 (KAM Stern + CRO)" },
+  { source:"messe-sps",      target:"lead-camp1",      label:"SPS-Leads speisen Kampagne Smarte Antriebe" },
+];
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+const nodeMap = new Map([...PARENTS, ...CHILDREN].map(n => [n.id, n]));
+const parentIds = new Set(PARENTS.map(p => p.id));
+let expanded = new Set();
+let selectedNodeId = null;
+let simNodes = [...PARENTS.map(n => ({...n}))];
+let simLinks = [...PARENT_LINKS.map(l => ({...l}))];
+
+// ═══════════════════════════════════════════════════════
+// D3 SETUP
+// ═══════════════════════════════════════════════════════
+const W = window.innerWidth, H = window.innerHeight - 50;
+const svg = d3.select("#graph").attr("width", W).attr("height", H);
+const g = svg.append("g");
+const gLinks = g.append("g").attr("class", "links");
+const gNodes = g.append("g").attr("class", "nodes");
+
+const zoom = d3.zoom().scaleExtent([0.15, 4])
+  .on("zoom", e => g.attr("transform", e.transform));
+svg.call(zoom);
+
+const drag = d3.drag()
+  .on("start", (e, d) => { if (!e.active) simulation.alphaTarget(0.2).restart(); d.fx = d.x; d.fy = d.y; })
+  .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
+  .on("end",   (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; });
+
+function nodeRadius(d) {
+  if (parentIds.has(d.id)) return 26 + CHILDREN.filter(c => c.parent === d.id).length * 1.2;
+  return 13;
+}
+
+const simulation = d3.forceSimulation(simNodes)
+  .force("link", d3.forceLink(simLinks).id(d => d.id).distance(d => d.type === 'child' ? 70 : 155).strength(d => d.type === 'child' ? 0.9 : 0.5))
+  .force("charge", d3.forceManyBody().strength(d => parentIds.has(d.id) ? -500 : -120))
+  .force("center", d3.forceCenter(W / 2, H / 2))
+  .force("collision", d3.forceCollide().radius(d => nodeRadius(d) + 16))
+  .force("x", d3.forceX(W/2).strength(0.025))
+  .force("y", d3.forceY(H/2).strength(0.025));
+
+// ═══════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════
+let linkSel, nodeSel;
+
+function updateGraph() {
+  linkSel = gLinks.selectAll("line").data(simLinks, d => {
+    const s = typeof d.source === 'object' ? d.source.id : d.source;
+    const t = typeof d.target === 'object' ? d.target.id : d.target;
+    return `${s}--${t}`;
+  }).join(
+    enter => enter.append("line")
+      .attr("class", d => ["link", d.type === 'child' ? "child-link" : ""].join(" "))
+      .attr("stroke", d => d.conflict ? "#ef4444" : d.type === 'child' ? "#1e2e45" : "#1a3050")
+      .attr("stroke-width", d => d.conflict ? 2 : d.type === 'child' ? 1 : 1.3)
+      .attr("stroke-opacity", d => d.conflict ? 0.75 : d.type === 'child' ? 0.4 : 0.45)
+      .attr("stroke-dasharray", d => d.conflict ? "6,3" : null)
+      .on("mouseenter", (e, d) => {
+        if (!d.conflict) return;
+        const et = document.getElementById("ett");
+        et.innerHTML = d.conflictLabel;
+        et.classList.add("vis");
+        posTooltip(et, e);
+      })
+      .on("mousemove", (e, d) => { if (d.conflict) posTooltip(document.getElementById("ett"), e); })
+      .on("mouseleave", () => document.getElementById("ett").classList.remove("vis")),
+    update => update,
+    exit => exit.remove()
+  );
+
+  gNodes.selectAll("g.node").data(simNodes, d => d.id)
+    .join(
+      enter => {
+        const ng = enter.append("g")
+          .attr("class", d => ["node", parentIds.has(d.id) ? "is-parent" : "is-child"].join(" "))
+          .call(drag)
+          .on("click", (e, d) => {
+            e.stopPropagation();
+            if (selectedNodeId === d.id) {
+              // second click: toggle expand for parents, keep selected
+              if (parentIds.has(d.id)) toggleExpand(d.id);
+            } else {
+              // new selection: expand parent if collapsed, then select
+              if (parentIds.has(d.id) && !expanded.has(d.id)) expandNode(d.id);
+              selectNode(d);
+            }
+          })
+          .on("mouseenter", showTooltip)
+          .on("mousemove", (e) => posTooltip(document.getElementById("tt"), e))
+          .on("mouseleave", () => document.getElementById("tt").classList.remove("vis"));
+
+        // Conflict ring
+        ng.append("circle").attr("class", "conflict-ring")
+          .attr("r", d => {
+            const hasConflict = [...PARENT_LINKS, ...CROSS_LINKS].some(l => l.conflict && (l.source === d.id || l.target === d.id));
+            return hasConflict ? nodeRadius(d) + 6 : 0;
+          })
+          .attr("fill", "none")
+          .attr("stroke", "#ef4444")
+          .attr("stroke-width", 1.5)
+          .attr("stroke-dasharray", "4,2")
+          .attr("stroke-opacity", 0.4);
+
+        // Selection ring (hidden by default)
+        ng.append("circle").attr("class", "sel-ring")
+          .attr("r", d => nodeRadius(d) + 9)
+          .attr("fill", "none")
+          .attr("stroke", d => d.color)
+          .attr("stroke-width", 2)
+          .attr("stroke-opacity", 0.6)
+          .attr("opacity", 0);
+
+        // Glow
+        ng.append("circle").attr("class", "glow")
+          .attr("r", d => nodeRadius(d) + 4)
+          .attr("fill", d => d.color + "08")
+          .attr("stroke", "none");
+
+        // Main circle
+        ng.append("circle").attr("class", "main")
+          .attr("r", nodeRadius)
+          .attr("fill", d => d.color + "1a")
+          .attr("stroke", d => d.color)
+          .attr("stroke-width", d => parentIds.has(d.id) ? 2 : 1.5);
+
+        // Label
+        ng.append("text")
+          .attr("text-anchor", "middle")
+          .attr("dy", "0.35em")
+          .attr("fill", d => d.color)
+          .attr("font-weight", "700")
+          .attr("font-size", d => parentIds.has(d.id) ? 11 : 9)
+          .text(d => d.short.length > 11 ? d.short.slice(0, 10) + "…" : d.short);
+
+        // Expand indicator
+        ng.append("text").attr("class", "exp-ind")
+          .attr("text-anchor", "middle")
+          .attr("dy", d => nodeRadius(d) + 12)
+          .attr("fill", "#475569")
+          .attr("font-size", "9")
+          .text(d => parentIds.has(d.id) ? "▸" : "");
+
+        return ng;
+      },
+      update => {
+        update.select(".exp-ind")
+          .text(d => {
+            if (!parentIds.has(d.id)) return "";
+            return expanded.has(d.id) ? "▾" : "▸";
+          })
+          .attr("fill", d => expanded.has(d.id) ? "#60a5fa" : "#475569");
+        update.classed("expanded", d => expanded.has(d.id));
+        update.classed("selected", d => d.id === selectedNodeId);
+        return update;
+      },
+      exit => exit.remove()
+    );
+
+  nodeSel = gNodes.selectAll("g.node");
+
+  simulation.nodes(simNodes);
+  simulation.force("link").links(simLinks);
+  simulation.on("tick", () => {
+    gLinks.selectAll("line")
+      .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+    gNodes.selectAll("g.node").attr("transform", d => `translate(${d.x},${d.y})`);
+  });
+
+  // Re-apply highlight if something is selected
+  if (selectedNodeId) applyHighlight(selectedNodeId);
+
+  updateStats();
+}
+
+// ═══════════════════════════════════════════════════════
+// EXPAND / COLLAPSE
+// ═══════════════════════════════════════════════════════
+function toggleExpand(nodeId) {
+  if (!parentIds.has(nodeId)) return;
+  expanded.has(nodeId) ? collapseNode(nodeId) : expandNode(nodeId);
+}
+
+function expandNode(nodeId) {
+  expanded.add(nodeId);
+  const parentNode = simNodes.find(n => n.id === nodeId);
+  const children = CHILDREN.filter(c => c.parent === nodeId).map(c => ({
+    ...c,
+    x: parentNode.x + (Math.random() - 0.5) * 50,
+    y: parentNode.y + (Math.random() - 0.5) * 50,
+    vx: 0, vy: 0,
+  }));
+  const childLinks = children.map(c => ({ source: nodeId, target: c.id, type: 'child', label: '' }));
+  const allVisibleIds = new Set([...simNodes.map(n => n.id), ...children.map(c => c.id)]);
+  const newCross = CROSS_LINKS.filter(l => allVisibleIds.has(l.source) && allVisibleIds.has(l.target) && !linkExists(l.source, l.target));
+  simNodes = [...simNodes, ...children];
+  simLinks = [...simLinks, ...childLinks, ...newCross];
+  simulation.alpha(0.5).restart();
+  updateGraph();
+}
+
+function collapseNode(nodeId) {
+  expanded.delete(nodeId);
+  const childIds = new Set(CHILDREN.filter(c => c.parent === nodeId).map(c => c.id));
+  simNodes = simNodes.filter(n => !childIds.has(n.id));
+  simLinks = simLinks.filter(l => {
+    const s = typeof l.source === 'object' ? l.source.id : l.source;
+    const t = typeof l.target === 'object' ? l.target.id : l.target;
+    return !childIds.has(s) && !childIds.has(t);
+  });
+  simulation.alpha(0.4).restart();
+  updateGraph();
+}
+
+function linkExists(s, t) {
+  return simLinks.some(l => {
+    const ls = typeof l.source === 'object' ? l.source.id : l.source;
+    const lt = typeof l.target === 'object' ? l.target.id : l.target;
+    return (ls === s && lt === t) || (ls === t && lt === s);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// SELECTION & HIGHLIGHT
+// ═══════════════════════════════════════════════════════
+function selectNode(d) {
+  selectedNodeId = d.id;
+  applyHighlight(d.id);
+  buildDetailPanel(d);
+  document.getElementById("detail-panel").classList.add("visible");
+  document.getElementById("stats-bar").classList.add("panel-open");
+}
+
+function deselectNode() {
+  selectedNodeId = null;
+  gNodes.selectAll("g.node").classed("dimmed", false).classed("selected", false);
+  gLinks.selectAll("line").classed("dimmed", false);
+  document.getElementById("detail-panel").classList.remove("visible");
+  document.getElementById("stats-bar").classList.remove("panel-open");
+}
+
+function applyHighlight(nodeId) {
+  // Collect all connected node IDs from currently visible links
+  const connected = new Set([nodeId]);
+  simLinks.forEach(l => {
+    const s = typeof l.source === 'object' ? l.source.id : l.source;
+    const t = typeof l.target === 'object' ? l.target.id : l.target;
+    if (s === nodeId) connected.add(t);
+    if (t === nodeId) connected.add(s);
+  });
+
+  gNodes.selectAll("g.node")
+    .classed("dimmed", d => !connected.has(d.id))
+    .classed("selected", d => d.id === nodeId);
+
+  gLinks.selectAll("line").classed("dimmed", l => {
+    const s = typeof l.source === 'object' ? l.source.id : l.source;
+    const t = typeof l.target === 'object' ? l.target.id : l.target;
+    return !connected.has(s) || !connected.has(t);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════════════════════
+function buildDetailPanel(d) {
+  const children = CHILDREN.filter(c => c.parent === d.id);
+
+  // All conflicts involving this node from the full dataset
+  const allLinks = [...PARENT_LINKS, ...CROSS_LINKS];
+  const conflicts = allLinks.filter(l => l.conflict && (l.source === d.id || l.target === d.id));
+
+  // Non-child connections currently visible
+  const visConnLinks = simLinks.filter(l => {
+    const s = typeof l.source === 'object' ? l.source.id : l.source;
+    const t = typeof l.target === 'object' ? l.target.id : l.target;
+    return (s === d.id || t === d.id) && l.type !== 'child';
+  });
+
+  // Also include connections from full dataset not yet visible (parent not expanded)
+  const visIds = new Set(visConnLinks.map(l => {
+    const s = typeof l.source === 'object' ? l.source.id : l.source;
+    const t = typeof l.target === 'object' ? l.target.id : l.target;
+    return s === d.id ? t : s;
+  }));
+  const allDataLinks = allLinks.filter(l => (l.source === d.id || l.target === d.id) && !l.conflict);
+  const extraLinks = allDataLinks.filter(l => {
+    const other = l.source === d.id ? l.target : l.source;
+    return !visIds.has(other);
+  });
+
+  let html = `
+    <div class="dp-header" style="border-left-color:${d.color}">
+      <div class="dp-label">${d.label}</div>
+      <div class="dp-domain" style="color:${d.color}">${d.domain || ''}</div>
+    </div>
+    <div class="dp-desc">${d.desc}</div>
+  `;
+
+  // Conflicts first (most important)
+  if (conflicts.length > 0) {
+    html += `<div class="dp-section">
+      <div class="dp-sec-hd red">🚨 Konflikte <span class="dp-sec-badge red">${conflicts.length}</span></div>`;
+    conflicts.forEach(l => {
+      html += `<div class="dp-conflict-item">${l.conflictLabel}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Children (sub-elements)
+  if (children.length > 0) {
+    html += `<div class="dp-section">
+      <div class="dp-sec-hd">Sub-Elemente <span class="dp-sec-badge">${children.length}</span></div>`;
+    if (parentIds.has(d.id)) {
+      const isExp = expanded.has(d.id);
+      html += `<div class="dp-expand-btn" onclick="toggleExpand('${d.id}'); buildDetailPanel(nodeMap.get('${d.id}'))">${isExp ? '▾ Im Graph einklappen' : '▸ Im Graph aufklappen'}</div>`;
+    }
+    children.forEach(c => {
+      html += `<div class="dp-child-item" style="border-left-color:${c.color}">
+        <div class="dp-child-name">${c.label}</div>
+        <div class="dp-child-desc">${c.desc}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Visible connections
+  if (visConnLinks.length > 0) {
+    html += `<div class="dp-section">
+      <div class="dp-sec-hd">Verbindungen (sichtbar) <span class="dp-sec-badge">${visConnLinks.length}</span></div>`;
+    visConnLinks.forEach(l => {
+      const s = typeof l.source === 'object' ? l.source.id : l.source;
+      const t = typeof l.target === 'object' ? l.target.id : l.target;
+      const otherId = s === d.id ? t : s;
+      const other = nodeMap.get(otherId);
+      if (!other) return;
+      html += `<div class="dp-conn-item ${l.conflict ? 'is-conflict' : ''}" onclick="selectNode(nodeMap.get('${otherId}'))">
+        <div class="dp-conn-dot" style="background:${other.color}"></div>
+        <div>
+          <div class="dp-conn-name">${other.label}</div>
+          ${l.label ? `<div class="dp-conn-rel">${l.label}</div>` : ''}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Extra connections (data-level, not yet visible in graph)
+  if (extraLinks.length > 0) {
+    html += `<div class="dp-section">
+      <div class="dp-sec-hd" style="color:#2d4060">Weitere Verbindungen (aufklappen) <span class="dp-sec-badge">${extraLinks.length}</span></div>`;
+    extraLinks.forEach(l => {
+      const otherId = l.source === d.id ? l.target : l.source;
+      const other = nodeMap.get(otherId);
+      if (!other) return;
+      html += `<div class="dp-conn-item" style="opacity:0.5">
+        <div class="dp-conn-dot" style="background:${other.color}; opacity:0.5"></div>
+        <div>
+          <div class="dp-conn-name">${other.label}</div>
+          ${l.label ? `<div class="dp-conn-rel">${l.label}</div>` : ''}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  document.getElementById("dp-content").innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════
+// TOOLTIP
+// ═══════════════════════════════════════════════════════
+function showTooltip(event, d) {
+  const tt = document.getElementById("tt");
+  const conns = [...PARENT_LINKS, ...CROSS_LINKS].filter(l => l.source === d.id || l.target === d.id);
+  const conflicts = conns.filter(l => l.conflict);
+  tt.innerHTML = `
+    <div class="tt-hd">
+      <div class="tt-dot" style="background:${d.color}"></div>
+      <div>
+        <div class="tt-name">${d.label}</div>
+        <div class="tt-domain">${d.domain || ''}</div>
+      </div>
+    </div>
+    <div class="tt-desc">${d.desc}</div>
+    <div class="tt-meta"><strong>${conns.length}</strong> Verbindungen${conflicts.length ? `<span class="tt-conflict"> · ${conflicts.length} Konflikt${conflicts.length > 1 ? 'e' : ''} ⚠️</span>` : ''}</div>
+  `;
+  tt.classList.add("vis");
+  posTooltip(tt, event);
+}
+
+function posTooltip(el, event) {
+  const x = event.clientX + 14, y = event.clientY - 10;
+  el.style.left = (x + 270 > window.innerWidth - 10 ? x - 284 : x) + "px";
+  el.style.top  = (y + 150 > window.innerHeight - 10 ? y - 150 : y) + "px";
+}
+
+// ═══════════════════════════════════════════════════════
+// STATS & CONTROLS
+// ═══════════════════════════════════════════════════════
+function updateStats() {
+  document.getElementById("stat-nodes").textContent = simNodes.length;
+  document.getElementById("stat-links").textContent = simLinks.length;
+  document.getElementById("stat-exp").textContent = expanded.size;
+  document.getElementById("stat-conf").textContent = simLinks.filter(l => l.conflict).length;
+  document.getElementById("stats-sub").textContent =
+    `${simNodes.length} Nodes · ${simLinks.length} Links · ${expanded.size} aufgeklappt · Klick für Details`;
+}
+
+function expandAll() {
+  PARENTS.forEach(p => { if (!expanded.has(p.id)) expandNode(p.id); });
+}
+
+function collapseAll() {
+  [...expanded].forEach(id => collapseNode(id));
+}
+
+function resetView() {
+  svg.transition().duration(600).call(zoom.transform, d3.zoomIdentity.translate(0, 0).scale(1));
+}
+
+svg.on("click", () => deselectNode());
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+updateGraph();
+simulation.alpha(1).restart();
+</script>
+</body>
+</html>

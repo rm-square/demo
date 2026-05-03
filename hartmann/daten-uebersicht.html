@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hartmann Antriebstechnik — Revenue Second Brain: Datenlandkarte</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; }
+
+  .header { padding: 40px 48px 24px; border-bottom: 1px solid #1e2535; }
+  .header h1 { font-size: 22px; font-weight: 600; color: #f8fafc; }
+  .header p { font-size: 14px; color: #64748b; margin-top: 6px; }
+  .tag { display: inline-block; background: #1e3a5f; color: #60a5fa; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-left: 10px; letter-spacing: 0.5px; }
+
+  /* STATS BAR */
+  .stats { display: flex; gap: 32px; padding: 20px 48px; border-bottom: 1px solid #1e2535; }
+  .stat { text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 700; color: #60a5fa; }
+  .stat-label { font-size: 11px; color: #64748b; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* MAIN LAYOUT */
+  .main { display: grid; grid-template-columns: 1fr 420px; gap: 0; min-height: calc(100vh - 160px); }
+
+  /* LEFT: NODE MAP */
+  .map-section { padding: 32px 40px; border-right: 1px solid #1e2535; }
+  .map-section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 24px; }
+
+  .node-map { position: relative; width: 100%; height: 520px; }
+  .node-map svg { width: 100%; height: 100%; }
+
+  /* RIGHT PANEL */
+  .right-panel { display: flex; flex-direction: column; }
+
+  /* TENSIONS */
+  .tensions { padding: 28px 32px; border-bottom: 1px solid #1e2535; flex: 1; }
+  .tensions h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 16px; }
+
+  .tension-card { background: #131a2e; border: 1px solid #1e2535; border-left: 3px solid #ef4444; border-radius: 6px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .tension-card:hover { background: #1a2340; border-color: #ef4444; }
+  .tension-card.orange { border-left-color: #f97316; }
+  .tension-card.yellow { border-left-color: #eab308; }
+  .tension-card.blue { border-left-color: #3b82f6; }
+  .tension-title { font-size: 13px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+  .tension-desc { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+  .tension-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .tension-tag { font-size: 10px; padding: 2px 7px; border-radius: 3px; font-weight: 500; }
+  .tension-tag.red { background: #2d1515; color: #fca5a5; }
+  .tension-tag.orange { background: #2d1f0f; color: #fdba74; }
+  .tension-tag.yellow { background: #2d2a0a; color: #fde047; }
+  .tension-tag.blue { background: #0f1f3d; color: #93c5fd; }
+
+  /* FILE LIST */
+  .file-list { padding: 24px 32px; border-top: 1px solid #1e2535; }
+  .file-list h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 14px; }
+  .file-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid #1a2030; }
+  .file-item:last-child { border-bottom: none; }
+  .file-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .file-name { font-size: 12px; color: #cbd5e1; flex: 1; font-family: 'SF Mono', 'Fira Code', monospace; }
+  .file-lines { font-size: 11px; color: #475569; }
+
+  /* BOTTOM SECTION */
+  .bottom { padding: 28px 40px; border-top: 1px solid #1e2535; display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
+  .domain-card { background: #131a2e; border: 1px solid #1e2535; border-radius: 8px; padding: 16px 14px; }
+  .domain-card:hover { border-color: #334155; }
+  .domain-icon { font-size: 20px; margin-bottom: 8px; }
+  .domain-name { font-size: 12px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; }
+  .domain-items { list-style: none; }
+  .domain-items li { font-size: 11px; color: #64748b; padding: 2px 0; display: flex; align-items: center; gap: 5px; }
+  .domain-items li::before { content: '·'; color: #334155; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Hartmann Antriebstechnik GmbH — Revenue Second Brain
+    <span class="tag">DEMO DATASET</span>
+  </h1>
+  <p>Datenlandkarte · 15 Quelldokumente · 7 Funktionsbereiche · ~2.800 Zeilen strukturierter Unternehmensdaten</p>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-num">15</div><div class="stat-label">Dokumente</div></div>
+  <div class="stat"><div class="stat-num">7</div><div class="stat-label">Bereiche</div></div>
+  <div class="stat"><div class="stat-num">5</div><div class="stat-label">versteckte Konflikte</div></div>
+  <div class="stat"><div class="stat-num">€7,4M</div><div class="stat-label">offene Pipeline</div></div>
+  <div class="stat"><div class="stat-num">23</div><div class="stat-label">Renewals Q2/Q3</div></div>
+  <div class="stat"><div class="stat-num">720</div><div class="stat-label">Mitarbeiter</div></div>
+</div>
+
+<div class="main">
+
+  <!-- LEFT: NODE MAP -->
+  <div class="map-section">
+    <h2>Vernetzung der Datenbereiche</h2>
+    <div class="node-map">
+      <svg viewBox="0 0 700 520" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="#334155"/>
+          </marker>
+          <marker id="arrow-red" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="#ef4444"/>
+          </marker>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- EDGES — standard -->
+        <!-- Firma → Products -->
+        <line x1="350" y1="100" x2="230" y2="175" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <!-- Firma → Marketing -->
+        <line x1="350" y1="100" x2="470" y2="175" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <!-- Products → Sales -->
+        <line x1="200" y1="210" x2="160" y2="285" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <!-- Products → Commercial -->
+        <line x1="240" y1="210" x2="340" y2="275" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <!-- Marketing → Customers -->
+        <line x1="490" y1="210" x2="555" y2="285" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <!-- Marketing → Commercial -->
+        <line x1="480" y1="210" x2="400" y2="275" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <!-- Commercial → Contracts -->
+        <line x1="370" y1="310" x2="360" y2="375" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <!-- Sales → Customers -->
+        <line x1="175" y1="320" x2="510" y2="390" stroke="#1e3a5f" stroke-width="1" stroke-dasharray="4,3"/>
+        <!-- Sales → Commercial -->
+        <line x1="195" y1="315" x2="330" y2="300" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <!-- Contracts → Customers -->
+        <line x1="390" y1="395" x2="510" y2="395" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <!-- Customers → CS (selbstreferenz loop) -->
+        <path d="M 570 350 C 640 320 650 430 580 430" stroke="#1e3a5f" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+        <!-- EDGES — conflict/tension (red dashed) -->
+        <!-- CS ↔ Sales (AE weiß nichts) -->
+        <line x1="550" y1="390" x2="175" y2="320" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>
+        <!-- Roadmap ↔ Sales (was darf versprochen werden) -->
+        <line x1="230" y1="185" x2="155" y2="290" stroke="#f97316" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.6"/>
+        <!-- DoA ↔ RFQ commercial terms -->
+        <line x1="355" y1="395" x2="400" y2="290" stroke="#eab308" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.6"/>
+
+        <!-- NODES -->
+
+        <!-- CENTER: Firma -->
+        <circle cx="350" cy="80" r="46" fill="#0f1829" stroke="#3b82f6" stroke-width="2" filter="url(#glow)"/>
+        <text x="350" y="74" text-anchor="middle" fill="#60a5fa" font-size="18">🏭</text>
+        <text x="350" y="90" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">Unternehmen</text>
+        <text x="350" y="103" text-anchor="middle" fill="#64748b" font-size="9">2 Docs</text>
+
+        <!-- Products -->
+        <circle cx="210" cy="195" r="42" fill="#0f1829" stroke="#8b5cf6" stroke-width="2"/>
+        <text x="210" y="189" text-anchor="middle" fill="#a78bfa" font-size="17">📦</text>
+        <text x="210" y="203" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">Produkte</text>
+        <text x="210" y="216" text-anchor="middle" fill="#64748b" font-size="9">2 Docs</text>
+
+        <!-- Marketing -->
+        <circle cx="490" cy="195" r="42" fill="#0f1829" stroke="#06b6d4" stroke-width="2"/>
+        <text x="490" y="189" text-anchor="middle" fill="#67e8f9" font-size="17">📣</text>
+        <text x="490" y="203" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">Marketing</text>
+        <text x="490" y="216" text-anchor="middle" fill="#64748b" font-size="9">1 Doc</text>
+
+        <!-- Sales -->
+        <circle cx="150" cy="310" r="42" fill="#0f1829" stroke="#10b981" stroke-width="2"/>
+        <text x="150" y="304" text-anchor="middle" fill="#6ee7b7" font-size="17">🎯</text>
+        <text x="150" y="318" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">Sales</text>
+        <text x="150" y="331" text-anchor="middle" fill="#64748b" font-size="9">2 Docs</text>
+
+        <!-- Commercial -->
+        <circle cx="365" cy="300" r="42" fill="#0f1829" stroke="#f59e0b" stroke-width="2"/>
+        <text x="365" y="294" text-anchor="middle" fill="#fcd34d" font-size="17">💰</text>
+        <text x="365" y="308" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">Commercial</text>
+        <text x="365" y="321" text-anchor="middle" fill="#64748b" font-size="9">3 Docs</text>
+
+        <!-- Customers/CS -->
+        <circle cx="560" cy="400" r="42" fill="#0f1829" stroke="#ef4444" stroke-width="2"/>
+        <text x="560" y="394" text-anchor="middle" fill="#fca5a5" font-size="17">👥</text>
+        <text x="560" y="408" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">Kunden/CS</text>
+        <text x="560" y="421" text-anchor="middle" fill="#64748b" font-size="9">3 Docs</text>
+
+        <!-- Contracts -->
+        <circle cx="350" cy="410" r="42" fill="#0f1829" stroke="#ec4899" stroke-width="2"/>
+        <text x="350" y="404" text-anchor="middle" fill="#f9a8d4" font-size="17">📋</text>
+        <text x="350" y="418" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">Verträge/DoA</text>
+        <text x="350" y="431" text-anchor="middle" fill="#64748b" font-size="9">2 Docs</text>
+
+        <!-- LEGEND -->
+        <line x1="30" y1="480" x2="70" y2="480" stroke="#1e3a5f" stroke-width="1.5"/>
+        <text x="76" y="484" fill="#64748b" font-size="10">Standard-Verbindung</text>
+        <line x1="180" y1="480" x2="220" y2="480" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>
+        <text x="226" y="484" fill="#64748b" font-size="10">Konflikt / versteckte Spannung</text>
+
+        <!-- CONFLICT LABELS on red lines -->
+        <text x="360" y="375" text-anchor="middle" fill="#ef4444" font-size="9" opacity="0.8">AE ≠ CSM-Wissen</text>
+        <text x="185" y="262" text-anchor="middle" fill="#f97316" font-size="9" opacity="0.8">Was darf versprochen werden?</text>
+        <text x="400" y="350" text-anchor="middle" fill="#eab308" font-size="9" opacity="0.8">Zahlungsziel-Konflikt</text>
+
+      </svg>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+
+    <!-- TENSIONS -->
+    <div class="tensions">
+      <h2>Versteckte Konflikte — nur sichtbar durch Vernetzung</h2>
+
+      <div class="tension-card">
+        <div class="tension-title">⚡ AE geht in QBR ohne CS-Wissen</div>
+        <div class="tension-desc">Jonas Weidner (AE) hat am 15. Mai Renewal-Termin bei Müller Maschinenbau. Im CS-Dashboard: offene SLA-Verletzung + Kulanzgutschrift noch nicht akzeptiert. Einkäufer Koch wird das als Verhandlungshebel nutzen — AE weiß davon nichts.</div>
+        <div class="tension-tags">
+          <span class="tension-tag red">Kunden/CS</span>
+          <span class="tension-tag blue">Sales</span>
+          <span class="tension-tag orange">Commercial</span>
+        </div>
+      </div>
+
+      <div class="tension-card orange">
+        <div class="tension-title">⚠️ RFQ-Versprechen vs. operative Realität</div>
+        <div class="tension-desc">Brenner Bratislava RFQ fordert 8h Vor-Ort-Reaktionszeit. Intern: Bratislava-Stützpunkt hat nur 2 Techniker — 8h nicht garantierbar. Wenn AE das verspricht ohne COO-Freigabe: Vertragsstrafe-Risiko bei €740K Deal.</div>
+        <div class="tension-tags">
+          <span class="tension-tag red">Kunden/CS</span>
+          <span class="tension-tag orange">Verträge/DoA</span>
+          <span class="tension-tag blue">Commercial</span>
+        </div>
+      </div>
+
+      <div class="tension-card yellow">
+        <div class="tension-title">⚠️ Hannover Messe zeigt nicht-freigegebene Features</div>
+        <div class="tension-desc">SDX-22 TwinBus wird am Stand demonstriert — Felderprobung bei 2 Kunden noch nicht abgeschlossen. Produktroadmap: "nicht breit kommunizieren". Wenn AE technische Zusagen macht, entstehen Haftungsrisiken.</div>
+        <div class="tension-tags">
+          <span class="tension-tag yellow">Produkte</span>
+          <span class="tension-tag blue">Sales</span>
+          <span class="tension-tag orange">Marketing</span>
+        </div>
+      </div>
+
+      <div class="tension-card orange">
+        <div class="tension-title">⚠️ Brenner fordert 60 Tage Netto — DoA sagt CFO</div>
+        <div class="tension-desc">RFQ verlangt 60 Tage Zahlungsziel + keine Anzahlung bei €740K Projekt. Laut DoA: >45 Tage braucht CRO+CFO, Anzahlungsverzicht >€200K braucht CFO. Wer das im RFQ-Angebot zusagt ohne Freigabe, verletzt die DoA.</div>
+        <div class="tension-tags">
+          <span class="tension-tag orange">Verträge/DoA</span>
+          <span class="tension-tag blue">Commercial</span>
+          <span class="tension-tag red">Kunden/CS</span>
+        </div>
+      </div>
+
+      <div class="tension-card blue">
+        <div class="tension-title">🔵 Bergmann-Inbound fällt durch Raster</div>
+        <div class="tension-desc">Bergmann & Söhne hat aktive Anfrage für €41K (April 2025). Zuständige AE Lisa Hofmann ist in Elternzeit. Vertretung David Schreiber kennt Account nicht — und ist selbst unter Quota. Wenn niemand reagiert: Neukunde verloren.</div>
+        <div class="tension-tags">
+          <span class="tension-tag blue">Kunden/CS</span>
+          <span class="tension-tag blue">Sales</span>
+          <span class="tension-tag blue">Commercial</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FILE LIST -->
+    <div class="file-list">
+      <h2>Quelldokumente (15)</h2>
+      <div class="file-item"><div class="file-dot" style="background:#3b82f6"></div><span class="file-name">company/firmenprofil.md</span><span class="file-lines">Org, ICP, Wettbewerb</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#3b82f6"></div><span class="file-name">company/messen-events-2025.md</span><span class="file-lines">Kalender, Budget, Teams</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#8b5cf6"></div><span class="file-name">products/produktuebersicht.md</span><span class="file-lines">3 Linien, Preisrahmen, Q1-Neu</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#8b5cf6"></div><span class="file-name">products/roadmap-2025-2026.md</span><span class="file-lines">Was versprochen werden darf</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#f59e0b"></div><span class="file-name">commercial/preisliste-2025.md</span><span class="file-lines">Alle Preise + Rabattstaffeln</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#f59e0b"></div><span class="file-name">commercial/deal-desk-prozess.md</span><span class="file-lines">Angebotsprozess, DB-Grenzen</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#f59e0b"></div><span class="file-name">commercial/quota-pipeline-2025.md</span><span class="file-lines">Quotas, Forecast, Pipeline</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#ec4899"></div><span class="file-name">contracts/delegation-of-authority.md</span><span class="file-lines">Wer darf was freigeben</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#ec4899"></div><span class="file-name">contracts/standard-vertragsklauseln.md</span><span class="file-lines">Was ist verhandelbar</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#10b981"></div><span class="file-name">sales/sales-plays.md</span><span class="file-lines">3 Plays: New Logo, Expansion, Comp</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#10b981"></div><span class="file-name">sales/battle-cards.md</span><span class="file-lines">SEW, Siemens, Bonfiglioli</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#06b6d4"></div><span class="file-name">marketing/lead-management.md</span><span class="file-lines">MQL/SQL, SLAs, Kampagnen</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#ef4444"></div><span class="file-name">customers/kundenaccounts.md</span><span class="file-lines">5 Accounts, Deals, Signale</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#ef4444"></div><span class="file-name">customers/cs-dashboard-q1-2025.md</span><span class="file-lines">Eskalationen, NPS, Renewals</span></div>
+      <div class="file-item"><div class="file-dot" style="background:#ef4444"></div><span class="file-name">customers/rfp-brenner-bratislava.md</span><span class="file-lines">€740K RFQ, Frist 23. Mai</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BOTTOM: DOMAIN CARDS -->
+<div class="bottom">
+
+  <div class="domain-card">
+    <div class="domain-icon">🏭</div>
+    <div class="domain-name">Unternehmen</div>
+    <ul class="domain-items">
+      <li>720 MA, €95M</li>
+      <li>4 Wettbewerber</li>
+      <li>7 Messen 2025</li>
+      <li>€380K Messebudget</li>
+    </ul>
+  </div>
+
+  <div class="domain-card">
+    <div class="domain-icon">📦</div>
+    <div class="domain-name">Produkte</div>
+    <ul class="domain-items">
+      <li>3 Produktlinien</li>
+      <li>16 Varianten</li>
+      <li>Q1-Neuheiten</li>
+      <li>Roadmap 2026</li>
+      <li>5 bekannte Limits</li>
+    </ul>
+  </div>
+
+  <div class="domain-card">
+    <div class="domain-icon">💰</div>
+    <div class="domain-name">Commercial</div>
+    <ul class="domain-items">
+      <li>Preisliste 2025</li>
+      <li>4 Rabattstufen</li>
+      <li>Deal-Desk-Prozess</li>
+      <li>72 offene Deals</li>
+      <li>€7,4M Pipeline</li>
+    </ul>
+  </div>
+
+  <div class="domain-card">
+    <div class="domain-icon">📋</div>
+    <div class="domain-name">Verträge/DoA</div>
+    <ul class="domain-items">
+      <li>6 Freigabestufen</li>
+      <li>Rabatt-Eskalation</li>
+      <li>Zahlungsziele</li>
+      <li>DSGVO/AVV</li>
+      <li>Pönalen-Grenzen</li>
+    </ul>
+  </div>
+
+  <div class="domain-card">
+    <div class="domain-icon">🎯</div>
+    <div class="domain-name">Sales</div>
+    <ul class="domain-items">
+      <li>3 Sales Plays</li>
+      <li>3 Battle Cards</li>
+      <li>Einwand-Handling</li>
+      <li>KPIs je Play</li>
+    </ul>
+  </div>
+
+  <div class="domain-card">
+    <div class="domain-icon">📣</div>
+    <div class="domain-name">Marketing</div>
+    <ul class="domain-items">
+      <li>MQL/SQL-Definition</li>
+      <li>3 aktive Kampagnen</li>
+      <li>SLA 24h Follow-up</li>
+      <li>Content-Bibliothek</li>
+      <li>3 offene Probleme</li>
+    </ul>
+  </div>
+
+  <div class="domain-card">
+    <div class="domain-icon">👥</div>
+    <div class="domain-name">Kunden/CS</div>
+    <ul class="domain-items">
+      <li>5 Accounts</li>
+      <li>3 Eskalationen</li>
+      <li>NPS 52</li>
+      <li>23 Renewals</li>
+      <li>1 aktiver RFQ</li>
+    </ul>
+  </div>
+
+</div>
+
+</body>
+</html>
