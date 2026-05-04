@@ -12,13 +12,27 @@ Zeigt wie Claude Opus 4.7 über 15 vernetzte Unternehmensdokumente aus dem GTM-B
 git clone https://github.com/rm-square/demo.git
 cd demo
 pip install -r requirements.txt
-export ANTHROPIC_API_KEY=sk-ant-...
 python3 app.py
 ```
 
 Dann öffnen:
 - **http://localhost:5001** — Chat-Interface mit Claude
 - **http://localhost:5001/graph** — Interaktiver Wissensgraph
+
+### Auth-Modi (auto-detect)
+
+Die App wählt beim Start automatisch eine von zwei Engines:
+
+| Modus | Trigger | Wann nutzen |
+|---|---|---|
+| **API** | `ANTHROPIC_API_KEY` ist gesetzt | Produktionsähnlich, pay-per-token. Voll: Prompt-Caching (`cache_control`), Adaptive Thinking, Reasoning-Trace im UI. |
+| **Subscription** | kein API-Key → fällt auf lokale `claude` CLI zurück | Demo-Tests gegen die Pro/Max-Subscription, ohne API-Kosten. Voraussetzung: `claude` CLI installiert + einmal `claude /login`. Caching macht der CLI automatisch (1h-TTL). Thinking-Events werden im Subscription-Modus aktuell nicht über die CLI durchgereicht — die Reasoning-Trace-Box bleibt dann leer (alle anderen Features arbeiten normal). |
+
+Welche Engine aktiv ist, zeigt das Badge in der Topbar (`API` / `Subscription`) sobald die erste Antwort ankommt; beim Start steht es im Server-Log:
+
+```
+[demo] auth engine: cli  (claude CLI / Subscription)
+```
 
 ---
 
