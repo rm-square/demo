@@ -141,14 +141,18 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 0;
+  padding: 5px 6px;
+  margin: 0 -6px;
   border-bottom: 1px solid #111827;
+  border-radius: 4px;
+  transition: background 0.18s, opacity 0.18s, box-shadow 0.18s;
 }
 .source-item:last-child { border-bottom: none; }
 .source-dot {
   width: 7px; height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
+  transition: box-shadow 0.18s, transform 0.18s;
 }
 .source-name {
   font-size: 11px;
@@ -158,6 +162,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.18s;
 }
 .source-badge {
   font-size: 9px;
@@ -165,6 +170,21 @@ body {
   background: #1a2030;
   padding: 1px 5px;
   border-radius: 3px;
+}
+/* Highlighting after answer arrives */
+.sources-pane.has-active .source-item:not(.active) {
+  opacity: 0.28;
+}
+.source-item.active {
+  background: rgba(59,130,246,0.08);
+  box-shadow: inset 2px 0 0 var(--blue);
+}
+.source-item.active .source-name {
+  color: var(--text);
+}
+.source-item.active .source-dot {
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
+  transform: scale(1.15);
 }
 
 /* STATS */
@@ -226,6 +246,7 @@ body {
 /* MESSAGES */
 .message { display: flex; gap: 12px; max-width: 860px; }
 .message.user { align-self: flex-end; flex-direction: row-reverse; }
+.msg-content { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 
 .msg-avatar {
   width: 32px; height: 32px;
@@ -319,6 +340,82 @@ body {
   margin: 12px 0;
 }
 
+/* REASONING TRACE */
+.reasoning-trace {
+  background: #0c1426;
+  border: 1px solid #1a2540;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  overflow: hidden;
+  max-width: 100%;
+}
+.reasoning-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--text3);
+  user-select: none;
+  transition: background 0.12s;
+}
+.reasoning-header:hover { background: #0f1a30; }
+.reasoning-icon {
+  font-size: 12px;
+  opacity: 0.85;
+}
+.reasoning-trace.streaming .reasoning-icon {
+  animation: spin 2.4s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.reasoning-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.reasoning-meta {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--text3);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.reasoning-toggle {
+  border: none;
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 4px;
+  transition: transform 0.18s;
+}
+.reasoning-trace.collapsed .reasoning-toggle { transform: rotate(-90deg); }
+.reasoning-body {
+  padding: 4px 14px 12px;
+  color: #8ea4be;
+  font-size: 11.5px;
+  line-height: 1.6;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre-wrap;
+  max-height: 220px;
+  overflow-y: auto;
+  border-top: 1px solid #131e36;
+  transition: max-height 0.25s ease, padding 0.25s ease, opacity 0.2s ease;
+}
+.reasoning-trace.collapsed .reasoning-body {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  border-top-color: transparent;
+}
+.reasoning-body::-webkit-scrollbar { width: 4px; }
+.reasoning-body::-webkit-scrollbar-thumb { background: #1e2940; border-radius: 2px; }
+
 /* THINKING INDICATOR */
 .thinking {
   display: flex;
@@ -408,7 +505,7 @@ textarea::placeholder { color: var(--text3); }
   </div>
   <div class="topbar-badge">
     <div class="dot"></div>
-    15 Dokumente · 7 Bereiche · Claude Opus 4.7
+    22 Dokumente · 7 Bereiche · Claude Opus 4.7
     &nbsp;&nbsp;
     <a href="/graph" style="color:#60a5fa;font-size:12px;text-decoration:none;border:1px solid #1e3a5f;padding:3px 10px;border-radius:5px;">🕸 Wissensgraph</a>
   </div>
@@ -442,42 +539,49 @@ textarea::placeholder { color: var(--text3); }
 
     </div>
 
-    <div class="sidebar-section">
+    <div class="sidebar-section sources-pane" id="sourcesPane">
       <div class="sidebar-label">Wissensbasis</div>
       <div class="stats-grid" style="margin-bottom:12px">
         <div class="stat-box">
-          <div class="stat-num">15</div>
+          <div class="stat-num">22</div>
           <div class="stat-lbl">Dokumente</div>
         </div>
         <div class="stat-box">
           <div class="stat-num">€7,4M</div>
-          <div class="stat-lbl">Pipeline</div>
+          <div class="stat-lbl">After-Sales</div>
         </div>
         <div class="stat-box">
-          <div class="stat-num">5</div>
+          <div class="stat-num">28</div>
           <div class="stat-lbl">Konflikte</div>
         </div>
         <div class="stat-box">
-          <div class="stat-num">93</div>
-          <div class="stat-lbl">CC-Verträge</div>
+          <div class="stat-num">68</div>
+          <div class="stat-lbl">CC-Konten</div>
         </div>
       </div>
 
-      <div class="source-item"><div class="source-dot" style="background:#3b82f6"></div><span class="source-name">company/firmenprofil</span><span class="source-badge">Org</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#3b82f6"></div><span class="source-name">company/messen-events</span><span class="source-badge">Events</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#8b5cf6"></div><span class="source-name">products/produktuebersicht</span><span class="source-badge">Portfolio</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#8b5cf6"></div><span class="source-name">products/roadmap-2025-2026</span><span class="source-badge">Roadmap</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#f59e0b"></div><span class="source-name">commercial/preisliste-2025</span><span class="source-badge">Preise</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#f59e0b"></div><span class="source-name">commercial/deal-desk-prozess</span><span class="source-badge">Deals</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#f59e0b"></div><span class="source-name">commercial/quota-pipeline</span><span class="source-badge">Quota</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#ec4899"></div><span class="source-name">contracts/delegation-of-authority</span><span class="source-badge">DoA</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#ec4899"></div><span class="source-name">contracts/vertragsklauseln</span><span class="source-badge">Legal</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#10b981"></div><span class="source-name">sales/sales-plays</span><span class="source-badge">Plays</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#10b981"></div><span class="source-name">sales/battle-cards</span><span class="source-badge">Comp</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#06b6d4"></div><span class="source-name">marketing/lead-management</span><span class="source-badge">Leads</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/kundenaccounts</span><span class="source-badge">CRM</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/cs-dashboard</span><span class="source-badge">CS</span></div>
-      <div class="source-item"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/rfp-brenner</span><span class="source-badge">RFQ</span></div>
+      <div class="source-item" data-source="company/firmenprofil"><div class="source-dot" style="background:#3b82f6"></div><span class="source-name">company/firmenprofil</span><span class="source-badge">Org</span></div>
+      <div class="source-item" data-source="company/messen-events-2025"><div class="source-dot" style="background:#3b82f6"></div><span class="source-name">company/messen-events</span><span class="source-badge">Events</span></div>
+      <div class="source-item" data-source="company/personalplanung-hr-2025"><div class="source-dot" style="background:#3b82f6"></div><span class="source-name">company/personalplanung-hr</span><span class="source-badge">HR</span></div>
+      <div class="source-item" data-source="products/produktuebersicht"><div class="source-dot" style="background:#8b5cf6"></div><span class="source-name">products/produktuebersicht</span><span class="source-badge">Portfolio</span></div>
+      <div class="source-item" data-source="products/roadmap-2025-2026"><div class="source-dot" style="background:#8b5cf6"></div><span class="source-name">products/roadmap-2025-2026</span><span class="source-badge">Roadmap</span></div>
+      <div class="source-item" data-source="commercial/preisliste-2025"><div class="source-dot" style="background:#f59e0b"></div><span class="source-name">commercial/preisliste-2025</span><span class="source-badge">Preise</span></div>
+      <div class="source-item" data-source="commercial/deal-desk-prozess"><div class="source-dot" style="background:#f59e0b"></div><span class="source-name">commercial/deal-desk-prozess</span><span class="source-badge">Deals</span></div>
+      <div class="source-item" data-source="commercial/quota-pipeline-2025"><div class="source-dot" style="background:#f59e0b"></div><span class="source-name">commercial/quota-pipeline</span><span class="source-badge">Quota</span></div>
+      <div class="source-item" data-source="commercial/ae-performance-q1-2025"><div class="source-dot" style="background:#f59e0b"></div><span class="source-name">commercial/ae-performance-q1</span><span class="source-badge">AE</span></div>
+      <div class="source-item" data-source="commercial/win-loss-analyse-2024-2025"><div class="source-dot" style="background:#f59e0b"></div><span class="source-name">commercial/win-loss-analyse</span><span class="source-badge">Win/Loss</span></div>
+      <div class="source-item" data-source="contracts/delegation-of-authority"><div class="source-dot" style="background:#ec4899"></div><span class="source-name">contracts/delegation-of-authority</span><span class="source-badge">DoA</span></div>
+      <div class="source-item" data-source="contracts/standard-vertragsklauseln"><div class="source-dot" style="background:#ec4899"></div><span class="source-name">contracts/vertragsklauseln</span><span class="source-badge">Legal</span></div>
+      <div class="source-item" data-source="sales/sales-plays"><div class="source-dot" style="background:#10b981"></div><span class="source-name">sales/sales-plays</span><span class="source-badge">Plays</span></div>
+      <div class="source-item" data-source="sales/battle-cards"><div class="source-dot" style="background:#10b981"></div><span class="source-name">sales/battle-cards</span><span class="source-badge">Comp</span></div>
+      <div class="source-item" data-source="marketing/lead-management"><div class="source-dot" style="background:#06b6d4"></div><span class="source-name">marketing/lead-management</span><span class="source-badge">Leads</span></div>
+      <div class="source-item" data-source="marketing/kampagnen-roi-attribution"><div class="source-dot" style="background:#06b6d4"></div><span class="source-name">marketing/kampagnen-roi</span><span class="source-badge">ROI</span></div>
+      <div class="source-item" data-source="customers/kundenaccounts"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/kundenaccounts</span><span class="source-badge">CRM</span></div>
+      <div class="source-item" data-source="customers/cs-dashboard-q1-2025"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/cs-dashboard</span><span class="source-badge">CS</span></div>
+      <div class="source-item" data-source="customers/rfp-brenner-bratislava-2025"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/rfp-brenner</span><span class="source-badge">RFQ</span></div>
+      <div class="source-item" data-source="customers/renewal-forecast-q2-q3-2025"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/renewal-forecast-q2-q3</span><span class="source-badge">Renewals</span></div>
+      <div class="source-item" data-source="customers/careconnect-nutzungsdaten"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/careconnect-nutzungsdaten</span><span class="source-badge">CC-Use</span></div>
+      <div class="source-item" data-source="customers/crm-aktivitaeten-log"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/crm-aktivitaeten-log</span><span class="source-badge">Activity</span></div>
     </div>
 
   </div>
@@ -489,7 +593,7 @@ textarea::placeholder { color: var(--text3); }
         <div class="icon">🧠</div>
         <h2>Revenue Intelligence Assistant</h2>
         <p>Stelle eine Frage oder wähle eine Demo-Szene links.<br>
-        Der Assistent hat Zugriff auf alle 15 Dokumente und kann<br>
+        Der Assistent hat Zugriff auf alle 22 Dokumente und kann<br>
         Fragen beantworten, Dokumente erstellen und Entscheidungen vorbereiten.</p>
       </div>
     </div>
@@ -603,18 +707,43 @@ async function sendMessage() {
   messages.appendChild(thinking);
   scrollToBottom();
 
-  // Assistant message (will replace thinking)
+  // Reset Source-Highlighting from prior turn
+  resetSourceHighlights();
+
+  // Assistant message scaffolding (reasoning trace + bubble)
   const assistantMsg = document.createElement('div');
   assistantMsg.className = 'message assistant';
-  const bubble = document.createElement('div');
-  bubble.className = 'msg-bubble';
-  assistantMsg.innerHTML = '';
-  assistantMsg.appendChild(document.createElement('div')).className = 'msg-avatar';
-  assistantMsg.querySelector('.msg-avatar').textContent = '🧠';
-  assistantMsg.appendChild(bubble);
+  assistantMsg.innerHTML = `
+    <div class="msg-avatar">🧠</div>
+    <div class="msg-content">
+      <div class="reasoning-trace streaming" hidden>
+        <div class="reasoning-header">
+          <span class="reasoning-icon">⚙</span>
+          <span class="reasoning-label">Reasoning</span>
+          <span class="reasoning-meta">denkt …</span>
+          <button class="reasoning-toggle" aria-label="toggle">▾</button>
+        </div>
+        <div class="reasoning-body"></div>
+      </div>
+      <div class="msg-bubble" hidden></div>
+    </div>
+  `;
+  const reasoningTrace = assistantMsg.querySelector('.reasoning-trace');
+  const reasoningBody = assistantMsg.querySelector('.reasoning-body');
+  const reasoningMeta = assistantMsg.querySelector('.reasoning-meta');
+  const reasoningHeader = assistantMsg.querySelector('.reasoning-header');
+  reasoningHeader.addEventListener('click', () => reasoningTrace.classList.toggle('collapsed'));
+  const bubble = assistantMsg.querySelector('.msg-bubble');
 
   let accumulated = '';
-  let firstChunk = true;
+  let reasoning = '';
+  let mounted = false;
+  const ensureMounted = () => {
+    if (mounted) return;
+    thinking.remove();
+    messages.appendChild(assistantMsg);
+    mounted = true;
+  };
 
   try {
     const response = await fetch('/api/chat', {
@@ -639,15 +768,29 @@ async function sendMessage() {
         if (!line.startsWith('data: ')) continue;
         const data = JSON.parse(line.slice(6));
 
-        if (data.type === 'text') {
-          if (firstChunk) {
-            thinking.remove();
-            messages.appendChild(assistantMsg);
-            firstChunk = false;
+        if (data.type === 'thinking') {
+          ensureMounted();
+          if (reasoning === '') reasoningTrace.hidden = false;
+          reasoning += data.content;
+          reasoningBody.textContent = reasoning;
+          reasoningBody.scrollTop = reasoningBody.scrollHeight;
+          scrollToBottom();
+        } else if (data.type === 'text') {
+          ensureMounted();
+          if (accumulated === '') {
+            bubble.hidden = false;
+            // Stop the spinner once the answer starts; keep trace open
+            reasoningTrace.classList.remove('streaming');
+            if (reasoningMeta) reasoningMeta.textContent = `${reasoning.length.toLocaleString('de-DE')} chars`;
           }
           accumulated += data.content;
-          bubble.innerHTML = marked.parse(accumulated);
+          // Strip the trailing **Quellen:** line from the rendered bubble — we show it visually via the sidebar
+          bubble.innerHTML = marked.parse(stripSourcesLine(accumulated));
           scrollToBottom();
+        } else if (data.type === 'sources') {
+          highlightSources(data.content || []);
+          // Auto-collapse the reasoning trace once the answer is fully in
+          if (reasoning) reasoningTrace.classList.add('collapsed');
         } else if (data.type === 'error') {
           thinking.remove();
           const errMsg = document.createElement('div');
@@ -678,6 +821,29 @@ function scrollToBottom() {
 
 function escapeHtml(text) {
   return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function resetSourceHighlights() {
+  const pane = document.getElementById('sourcesPane');
+  if (!pane) return;
+  pane.classList.remove('has-active');
+  pane.querySelectorAll('.source-item.active').forEach(el => el.classList.remove('active'));
+}
+
+function highlightSources(paths) {
+  const pane = document.getElementById('sourcesPane');
+  if (!pane || !paths.length) return;
+  let any = false;
+  paths.forEach(p => {
+    const el = pane.querySelector(`.source-item[data-source="${CSS.escape(p)}"]`);
+    if (el) { el.classList.add('active'); any = true; }
+  });
+  if (any) pane.classList.add('has-active');
+}
+
+// Hide the "**Quellen:** …" line from the bubble during render — sources are visualized in the sidebar
+function stripSourcesLine(text) {
+  return text.replace(/\n*\*\*Quellen:\*\*[^\n]*\s*$/m, '');
 }
 </script>
 </body>
