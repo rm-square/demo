@@ -133,7 +133,7 @@ svg { width: 100%; height: 100%; }
 <div class="topbar">
   <div>
     <div class="topbar-title">Wissensgraph — Hartmann Antriebstechnik GmbH</div>
-    <div class="topbar-sub" id="stats-sub">15 Dokumente · Klick auf Node für Details</div>
+    <div class="topbar-sub" id="stats-sub">22 Dokumente · Klick auf Node für Details</div>
   </div>
   <div class="topbar-right">
     <span class="tb-btn" onclick="collapseAll()">↺ Einklappen</span>
@@ -160,10 +160,10 @@ svg { width: 100%; height: 100%; }
     <div class="leg-hint">Klick: Details + Aufklappen<br>Hintergrund: Auswahl aufheben<br>Drag: verschieben · Scroll: Zoom</div>
   </div>
   <div class="stats-bar" id="stats-bar">
-    <div class="s-pill"><div class="s-num" id="stat-nodes">15</div><div class="s-lbl">Nodes</div></div>
-    <div class="s-pill"><div class="s-num" id="stat-links">52</div><div class="s-lbl">Links</div></div>
+    <div class="s-pill"><div class="s-num" id="stat-nodes">22</div><div class="s-lbl">Nodes</div></div>
+    <div class="s-pill"><div class="s-num" id="stat-links">0</div><div class="s-lbl">Links</div></div>
     <div class="s-pill"><div class="s-num" id="stat-exp">0</div><div class="s-lbl">Aufgeklappt</div></div>
-    <div class="s-pill"><div class="s-num" style="color:#fca5a5" id="stat-conf">5</div><div class="s-lbl">Konflikte</div></div>
+    <div class="s-pill"><div class="s-num" style="color:#fca5a5" id="stat-conf">0</div><div class="s-lbl">Konflikte</div></div>
   </div>
 
   <svg id="graph"></svg>
@@ -202,6 +202,13 @@ const PARENTS = [
   { id:"accounts",     short:"Accounts",    label:"Kundenaccounts",          domain:"Kunden/CS",    color:"#ef4444", desc:"5 Accounts: Müller, Brenner, Zeller, KME, Bergmann. Deal-Historien + Signale." },
   { id:"csdashboard",  short:"CS Dashboard",label:"CS Dashboard Q1/25",      domain:"Kunden/CS",    color:"#ef4444", desc:"3 offene Eskalationen, NPS 52, 23 Renewals Q2/Q3, fehlende Teamlead-Stelle" },
   { id:"rfp",          short:"RFP Brenner", label:"RFP Brenner Bratislava",  domain:"Kunden/CS",    color:"#ef4444", desc:"€740K RFQ. 60x SDX-22 SI + 30x PD-3000 + CareConnect 36M. Frist 23. Mai. Siemens Wettbewerber." },
+  { id:"winloss",      short:"Win/Loss",    label:"Win/Loss Analyse 2024/25", domain:"Commercial",  color:"#f59e0b", desc:"47 Deals Q3/2024–Q1/2025. Win-Rate 61.7%. Siemens-Verluste durch Perception, nicht Preis. CareConnect im Bundle +25–33% Win-Rate-Uplift." },
+  { id:"aeperf",       short:"AE Perf.",    label:"AE Performance Q1/2025",  domain:"Commercial",   color:"#f59e0b", desc:"8 AEs: Zimmermann Top (74% WR, 22 Akt/W). Schreiber kritisch (39% WR, PIP 15.Mai). Stage Velocity 9.8W vs. 7.2W Benchmark." },
+  { id:"renewalforecast", short:"Renewal FC", label:"Renewal Forecast Q2/Q3", domain:"Kunden/CS",  color:"#ef4444", desc:"23 Verträge, €1.248K ARR. KME 85% Churn-Risiko. Q1/2025 71% Rate = schlechtestes Quartal seit Start. Upsell-Potenzial €49K ARR." },
+  { id:"ccusage",      short:"CC Nutzung",  label:"CareConnect Nutzungsdaten", domain:"Kunden/CS", color:"#ef4444", desc:"68 Konten, 1.847 Antriebe. 312 Alerts Q1, 43 Ausfälle vermieden. Müller: 3 ignorierte Alerts vor Ausfall. CC-Plus SLA nur 71%." },
+  { id:"kampagnen",    short:"Kampagnen ROI",label:"Kampagnen ROI & Attribution", domain:"Marketing", color:"#06b6d4", desc:"Email 30.1x, Webinar 27.8x ROI. CMO plant Event-Budget +10% trotz 4–5x schlechterer Performance vs. Digital-Kanäle." },
+  { id:"hrplan",       short:"HR Planung",  label:"Personalplanung HR 2025",  domain:"Unternehmen", color:"#3b82f6", desc:"4 kritische Risiken: Pieters (SEW-Angebot), Schreiber (PIP), Hofmann (Elternzeit), CSM-Lead (vakant). 6 offene Stellen, €340K Budget." },
+  { id:"crmlog",       short:"CRM Log",     label:"CRM Aktivitäten-Log",      domain:"Kunden/CS",  color:"#ef4444", desc:"60-Tage-Log für 5 Key Accounts. Bergmann-Mail ungelesen (€41K, Frist 15.Mai). Koch-Beschwerde Zimmermann unbekannt. Zeller-Angebot 2W überfällig." },
 ];
 
 const CHILDREN = [
@@ -280,6 +287,40 @@ const CHILDREN = [
   { id:"rfp-pos3",    short:"Pos.3: CareConnect",  label:"RFQ Pos.3: CareConnect 36M",       parent:"rfp", color:"#ef4444", desc:"8h Vor-Ort Bratislava, 24/7 Hotline, Ersatzteil 24h Standort, QBRs, DSGVO-Konformitätserklärung." },
   { id:"rfp-terms",   short:"60T / kein Anz.",     label:"Kommerzielle Bedingungen RFQ",     parent:"rfp", color:"#ef4444", desc:"60T netto, keine Anzahlung. Lieferfrist 15. Sept (12 Wochen). Pönale 0,5%/W max 5%. Rahmenvertrag 3J." },
   { id:"rfp-criteria",short:"Bewertungskriterien", label:"RFQ Bewertungskriterien",           parent:"rfp", color:"#ef4444", desc:"35% Technik · 30% Preis TCO3J · 20% Lieferzuverlässigkeit/Referenzen · 10% Service Bratislava · 5% CO₂." },
+  // Win/Loss Analyse
+  { id:"wl-rates",    short:"Win-Rates",        label:"Win-Rates je Wettbewerber",     parent:"winloss", color:"#f59e0b", desc:"vs. SEW: 71% · vs. Bonfiglioli: 71% · Sole Source: 90% · vs. Siemens: nur 36%." },
+  { id:"wl-siemens",  short:"Siemens Problem ⚠️",label:"Siemens: Perception, nicht Preis",parent:"winloss",color:"#f59e0b", desc:"5 von 7 Siemens-Niederlagen: 'Siemens ist sicherer/zuverlässiger'. Battle Card adressiert Preis — falscher Ansatz." },
+  { id:"wl-pricing",  short:"Pricing Elastizität",label:"Pricing-Elastizität",          parent:"winloss", color:"#f59e0b", desc:"5–10% Rabatt: Win-Rate 69% (Sweet Spot). >10%: kein Uplift (50–63%). Teurere Deals: mehr Rabatt hilft nicht." },
+  { id:"wl-speed",    short:"Quote-Speed",       label:"Angebotsgeschwindigkeit",       parent:"winloss", color:"#f59e0b", desc:"4 Deals verloren wegen zu langsamer Angebotserstellung (>5 Werktage). SEW und Siemens schneller." },
+  // AE Performance
+  { id:"ae-zimmermann",short:"Zimmermann ✅",    label:"Top-AE: Zimmermann",           parent:"aeperf",  color:"#f59e0b", desc:"+€92K über Plan. 74% Win Rate. 22 Aktivitäten/Woche. Dual-Rolle AE Süd + Sales Ops." },
+  { id:"ae-schreiber", short:"Schreiber 🔴",     label:"Risiko-AE: Schreiber",          parent:"aeperf",  color:"#f59e0b", desc:"–€145K unter Plan. 39% Win Rate. 9 Aktivitäten/Woche. Kein Kundenkontakt seit 14. Apr. PIP 15. Mai." },
+  { id:"ae-engel",     short:"Engel ⚠️",         label:"Overload: AE Engel",            parent:"aeperf",  color:"#f59e0b", desc:"–€155K unter Plan. Betreut Hofmanns Region zusätzlich (18 Accounts). Erklärung für Underperformance." },
+  { id:"ae-metrics",   short:"Stage Velocity",   label:"Stage Velocity Analyse",        parent:"aeperf",  color:"#f59e0b", desc:"Ø Sales Cycle 9.8 Wochen vs. Benchmark 7.2W. Forecast-Accuracy: Schreiber 68%, Engel 64% — systematisch zu optimistisch." },
+  // Renewal Forecast
+  { id:"rf-high-risk", short:"3 Hochrisiko",     label:"Hochrisiko-Renewals",           parent:"renewalforecast", color:"#ef4444", desc:"KME 85% Churn, Hörmann 60% (kein CSM-Kontakt 4M), Müller 55% (hängt am QBR 15. Mai)." },
+  { id:"rf-upsell",    short:"€49K Upsell",      label:"Upsell-Potenzial €49K ARR",    parent:"renewalforecast", color:"#ef4444", desc:"5 Accounts: Pharmariese +€14K, Logistikzentrum Süd +€12K, Müller +€11K, Zeller +€6K, Kern +€6K." },
+  { id:"rf-trend",     short:"71% Rate ⚠️",      label:"Renewal-Rate Trend negativ",   parent:"renewalforecast", color:"#ef4444", desc:"2022: 94% · 2023: 95% · 2024: 89% · Q1/2025: 71%. Beide Q1-Churns: CC-Base ohne CSM-Kontakt → SEW." },
+  // CareConnect Nutzung
+  { id:"cc-alerts",    short:"312 Alerts Q1",    label:"Alert-Performance Q1/2025",    parent:"ccusage", color:"#ef4444", desc:"312 Predictive Alerts, 267 korrekt (85.6%), 43 Ausfälle vermieden. Ø Kosten Ausfall €12.400 → €533K Schaden verhindert." },
+  { id:"cc-mueller-miss",short:"Müller: 3 Alerts ignoriert",label:"Müller: Ignorierte Alerts",parent:"ccusage",color:"#ef4444", desc:"3 Temperatur-Anomalie-Alerts vor PD-500-Ausfall 23. März. Nicht quittiert. CC-Premium hätte Auto-Eskalation ausgelöst." },
+  { id:"cc-zeller-trigger",short:"Zeller: Upgrade-Trigger",label:"Zeller: Upgrade-Trigger erfüllt",parent:"ccusage",color:"#ef4444", desc:"4 ungeplante Einsätze in 12 Monaten. Kampagne-Trigger: ≥3 Einsätze. Niemand hat Upsell-Prozess ausgelöst." },
+  { id:"cc-sla-plus",  short:"CC-Plus SLA 71%",  label:"CC-Plus SLA-Krise",            parent:"ccusage", color:"#ef4444", desc:"CC-Plus SLA-Einhaltung nur 71% (Ziel: 24h). Ein Drittel aller Plus-Kunden wartet länger. Ursache: Ersatzteil-Verfügbarkeit." },
+  // Kampagnen ROI
+  { id:"kamp-digital", short:"Digital 10–30x ROI",label:"Digital-Kanäle ROI",          parent:"kampagnen", color:"#06b6d4", desc:"Email: 30.1x · Webinar: 27.8x · Google Ads: 12.4x · LinkedIn: 10.8x · Event-Leads: nur 3.1x ROI." },
+  { id:"kamp-budget",  short:"Event-Budget +10% ⚠️",label:"CMO: Event-Budget-Erhöhung",parent:"kampagnen", color:"#06b6d4", desc:"CMO plant €420K Messe-Budget 2025 (+10%). Events liefern 21% Revenue bei 36% Budget-Anteil vs. Digital: 22% Budget → 78% Revenue." },
+  { id:"kamp-hannover25",short:"Hannover 2025 Live",label:"Hannover Messe 2025 Tracking",parent:"kampagnen",color:"#06b6d4", desc:"Tag 3: 180 Badge-Scans, 111 qualifizierte Gespräche, 33 Demo-Anfragen SDX. Prognose: 240 Scans bis Ende." },
+  { id:"kamp-content", short:"Content-Gaps",     label:"Content-Lücken",               parent:"kampagnen", color:"#06b6d4", desc:"Fehlend: Edelstahl-Broschüre PD-200 (4 Deals verloren), CC-Premium Case Study (6 AEs warten darauf für Upsell)." },
+  // HR Planung
+  { id:"hr-pieters",   short:"Pieters 🔴",        label:"Pieters: SEW-Angebot",          parent:"hrplan", color:"#3b82f6", desc:"Regional Manager Benelux erwägt Kündigung. SEW-Eurodrive Angebot. Entscheidung bis 15. Juni. €430K Benelux-Pipeline at risk." },
+  { id:"hr-schreiber", short:"Schreiber PIP",     label:"Schreiber: PIP 15. Mai",        parent:"hrplan", color:"#3b82f6", desc:"AE Nord. PIP-Gespräch 15. Mai. Bei Nicht-Erfüllung Trennung Q3. Region Nord (31 Accounts, €312K Pipeline) ohne AE." },
+  { id:"hr-vakanz",    short:"CSM Lead vakant",   label:"CSM Team Lead vakant",          parent:"hrplan", color:"#3b82f6", desc:"Vakant seit Q4/2024. 3 Kandidaten abgesprungen (Gehalt). Anna Becker übernimmt de-facto → Abgangsrisiko. SLA-Einhaltung 71%." },
+  { id:"hr-hofmann",   short:"Hofmann Elternzeit",label:"Hofmann: Elternzeit bis Nov",   parent:"hrplan", color:"#3b82f6", desc:"AE Ost (Lisa Hofmann) bis 1. Nov 2025. 18 Accounts + Bergmann von Engel mitbetreut. Erklärt Engels Underperformance." },
+  // CRM Aktivitäten-Log
+  { id:"crm-mueller-blind",short:"Koch-Mail unseen ⚠️",label:"Müller: Koch-Mail ungelesen",parent:"crmlog",color:"#ef4444", desc:"Koch schrieb 2. Mai explizite Beschwerde-Mail (SLA-Verletzung, 'planen QBR als Druckmittel'). Zimmermann hat sie noch nicht gesehen." },
+  { id:"crm-bergmann-unread",short:"Bergmann ungelesen 🔴",label:"Bergmann-Mail: HubSpot 'geöffnet: Nein'",parent:"crmlog",color:"#ef4444", desc:"Bergmann sendete 28. April Inbound-Anfrage €41K (Frist 15. Mai). HubSpot zeigt: Engel hat die Mail nicht geöffnet." },
+  { id:"crm-zeller-overdue",short:"Zeller 2W überfällig",label:"Zeller: Angebot überfällig",parent:"crmlog",color:"#ef4444", desc:"Wien-Projekt-Angebot (22x PD-1200 + 6x PD-3000, €210K) seit 14. April versprochen. Stand 8. Mai: noch nicht versendet." },
+  { id:"crm-kme-threat",short:"KME SEW-Drohung",  label:"KME: Explizite Wechseldrohung",parent:"crmlog", color:"#ef4444", desc:"Bauer (KME) 30. April: 'Wir bereuen es, SEW verlassen zu haben. Wenn 8. Mai nicht gelöst, schreiben wir SEW an.'" },
 ];
 
 const PARENT_LINKS = [
@@ -330,6 +371,41 @@ const PARENT_LINKS = [
   { source:"accounts",     target:"rfp",         label:"Brenner ist RFQ-Absender (KAM Stern)" },
   { source:"csdashboard",  target:"rfp",         conflict:true, label:"Bratislava: 2 Techniker, 8h SLA nicht erfüllbar", conflictLabel:"🚨 RFQ Pos.3 fordert 8h Vor-Ort Bratislava — intern aktuell nur 48h garantierbar (2 Techniker)" },
   { source:"csdashboard",  target:"quota",       label:"Churn Q1: 2 Kündigungen, NRR 108%" },
+  // Win/Loss Analyse
+  { source:"winloss",    target:"battlecards",  conflict:true,  label:"Siemens Battle Card: falscher Fokus", conflictLabel:"🚨 Win-Loss zeigt: 5/7 Siemens-Niederlagen durch Perception ('sicherer'), nicht Preis — Battle Card adressiert das Falsche" },
+  { source:"winloss",    target:"salesplays",   label:"Empirische Win-Rate validiert Play-Strategie" },
+  { source:"winloss",    target:"preisliste",   label:"Pricing Sweet Spot 5–10% = validierter Rabattrahmen" },
+  { source:"winloss",    target:"accounts",     label:"CareConnect im Bundle: +25–33% Win-Rate-Uplift" },
+  { source:"winloss",    target:"quota",        label:"Win-Rate 61.7% → Forecast-Kalibrierung" },
+  // AE Performance
+  { source:"aeperf",     target:"quota",        conflict:true,  label:"3 AEs unter Plan = €300K+ Quota-Gap", conflictLabel:"🚨 Schreiber –€145K + Engel –€155K + Hofmann-Elternzeit = Quota-Gap nicht aus Pipeline erklärbar" },
+  { source:"aeperf",     target:"accounts",     label:"Schreiber: 14 Tage kein Kundenkontakt Region Nord" },
+  { source:"aeperf",     target:"leads",        label:"Aktivitäten/Woche korreliert mit Win Rate" },
+  { source:"aeperf",     target:"hrplan",       label:"PIP, Elternzeit, Überlastung = HR-Risiken" },
+  // Renewal Forecast
+  { source:"renewalforecast", target:"csdashboard", label:"23 Renewals Q2/Q3 — Trend negativ (71% Q1)" },
+  { source:"renewalforecast", target:"accounts",    label:"KME, Müller, Hörmann als Hochrisiko-Renewals" },
+  { source:"renewalforecast", target:"hrplan",      conflict:true, label:"CSM-Lead-Vakanz = direktes Renewal-Risiko", conflictLabel:"🚨 Ohne CSM Team Lead werden KME, Hörmann, Müller nicht intensiv genug betreut — Churn-Risiko steigt direkt" },
+  // CareConnect Nutzung
+  { source:"ccusage",    target:"csdashboard",  label:"68 Konten, CC-Plus SLA 71% kritisch" },
+  { source:"ccusage",    target:"accounts",     label:"1.847 verbundene Antriebe, Nutzungstiefe je Account" },
+  { source:"ccusage",    target:"roadmap",      label:"CC Auto-Eskalation kommt Q3/2025 — derzeit nur Premium" },
+  { source:"ccusage",    target:"renewalforecast", label:"Alert-Nutzung korreliert mit Renewal-Wahrscheinlichkeit" },
+  // Kampagnen ROI
+  { source:"kampagnen",  target:"leads",        conflict:true, label:"Digital 4–5x ROI vs. Events — Budgetallokation falsch", conflictLabel:"🚨 Email 30.1x / Webinar 27.8x ROI — Events 3.1x. CMO erhöht trotzdem Messe-Budget auf €420K (+10%)" },
+  { source:"kampagnen",  target:"messen",       label:"Hannover 2025: 180 Badge-Scans Tag 3, besser als 2024" },
+  { source:"kampagnen",  target:"quota",        label:"Pipeline-Konzentration: 43% an 3 Deals (Brenner dominant)" },
+  { source:"kampagnen",  target:"firmenprofil", label:"CMO Riedel verantwortet Marketing-Budget €380K+" },
+  // HR Planung
+  { source:"hrplan",     target:"firmenprofil", label:"4 kritische Personalrisiken, 6 offene Stellen" },
+  { source:"hrplan",     target:"quota",        conflict:true, label:"Personalabgänge gefährden Quota direkt", conflictLabel:"🚨 Pieters-Abgang: €430K Benelux at risk. Schreiber-Exit: Region Nord ohne AE bis Q1/2026. Engel überlastet." },
+  { source:"hrplan",     target:"csdashboard",  label:"CSM-Team-Lead-Vakanz = direktes Service-Risiko" },
+  { source:"hrplan",     target:"accounts",     label:"Hofmann-Elternzeit → Bergmann ohne feste AE-Betreuung" },
+  // CRM Aktivitäten-Log
+  { source:"crmlog",     target:"accounts",     conflict:true, label:"AE-Blindspots: wichtige Signale nicht gelesen", conflictLabel:"🚨 Bergmann-Mail (€41K) ungelesen. Koch-Beschwerde Zimmermann unbekannt. Zeller-Angebot 2W überfällig." },
+  { source:"crmlog",     target:"csdashboard",  label:"Eskalationen + offene Aktionen für 5 Key Accounts" },
+  { source:"crmlog",     target:"quota",        label:"4 Pipeline-Deals ohne AE-Aktivität >14 Tage" },
+  { source:"crmlog",     target:"aeperf",       label:"Aktivitäts-Log belegt AE-Engagement-Daten" },
 ];
 
 const CROSS_LINKS = [
@@ -365,6 +441,43 @@ const CROSS_LINKS = [
   { source:"play-newlogo",   target:"bc-sew",          label:"New Logo Play: SEW-Verdrängung häufigste Situation" },
   { source:"messe-hannover", target:"acc-brenner",     label:"Geplanter KA-Termin Di 10:00 (KAM Stern + CRO)" },
   { source:"messe-sps",      target:"lead-camp1",      label:"SPS-Leads speisen Kampagne Smarte Antriebe" },
+  // Win-Loss Kinder ↔ andere
+  { source:"wl-siemens",    target:"bc-siemens",      conflict:true, label:"Battle Card vs. Win-Loss: falscher Fokus", conflictLabel:"🚨 Battle Card nennt Preis als Differenzierung — Win-Loss zeigt: Kunden verlieren wegen Reliability-Perception, nicht Preis" },
+  { source:"wl-pricing",    target:"preis-rabatt",    label:"Sweet Spot 5–10% bestätigt Rabattstruktur" },
+  { source:"wl-rates",      target:"acc-zeller",      label:"Bonfiglioli aktiv bei Zeller Wien-Projekt" },
+  { source:"wl-speed",      target:"pipe-gap",        label:"Langsame Angebote → verlorene Deals → Quota-Gap" },
+  // AE Performance Kinder ↔ andere
+  { source:"ae-schreiber",  target:"pipe-gap",        label:"Schreiber –€145K = größter Einzelbeitrag zum Quota-Gap" },
+  { source:"ae-engel",      target:"acc-bergmann",    conflict:true, label:"Engel überlastet → Bergmann-Mail ungelesen", conflictLabel:"🚨 Engel betreut Hofmanns Region zusätzlich → kein Kapazität → Bergmann-Inbound €41K unbearbeitet" },
+  { source:"ae-metrics",    target:"lead-sla",        label:"Stage Velocity + SLA-Verstoß: selbes Engagement-Problem" },
+  { source:"ae-zimmermann", target:"acc-mueller",     label:"Zimmermann ist AE für Müller (QBR 15.Mai)" },
+  // Renewal Forecast Kinder ↔ andere
+  { source:"rf-high-risk",  target:"esc-kme",         label:"KME Churn-Risiko 85% = offene Eskalation #0312" },
+  { source:"rf-high-risk",  target:"esc-mueller",     label:"Müller 55% Churn — hängt am QBR 15. Mai" },
+  { source:"rf-upsell",     target:"acc-zeller",      label:"Zeller CC-Base → CC-Plus: +€6K/Jahr" },
+  { source:"rf-upsell",     target:"acc-mueller",     label:"Müller CC-Plus → CC-Premium: +€11K (nur wenn Eskalation gelöst)" },
+  { source:"rf-trend",      target:"esc-renewals",    label:"Negatives Trend erklärt Watchlist-Länge" },
+  // CareConnect Nutzung Kinder ↔ andere
+  { source:"cc-mueller-miss", target:"esc-mueller",   conflict:true, label:"3 Alerts ignoriert — CC-Premium hätte verhindert", conflictLabel:"🚨 Müller PD-500-Ausfall: 3 ignorierte Temperatur-Alerts vorher. CC-Premium löst automatisch CSM-Eskalation aus — CC-Plus tut das nicht" },
+  { source:"cc-zeller-trigger", target:"acc-zeller",  conflict:true, label:"Upgrade-Trigger erfüllt — kein Upsell ausgelöst", conflictLabel:"🚨 Zeller hat 4 ungeplante Einsätze in 12M (Trigger: ≥3) — niemand hat den CC-Plus-Upsell-Prozess gestartet" },
+  { source:"cc-sla-plus",   target:"rf-high-risk",    label:"CC-Plus SLA 71% → Churn-Trigger für Plus-Kunden" },
+  { source:"cc-alerts",     target:"prod-cc",         label:"85.6% korrekte Vorwarnungen belegen Predictive-Wert" },
+  // Kampagnen Kinder ↔ andere
+  { source:"kamp-budget",   target:"messe-hannover",  conflict:true, label:"Messe-Budget erhöht obwohl ROI 4–5x schlechter", conflictLabel:"🚨 Hannover und andere Events 3.1x ROI vs. Digital 10–30x — CMO erhöht trotzdem Messe-Budget auf €420K" },
+  { source:"kamp-content",  target:"acc-brenner",     label:"Fehlende CC-Premium Case Study blockiert Upsell bei Großkunden" },
+  { source:"kamp-hannover25",target:"lead-camp3",     label:"Hannover-Scans → Follow-Up Kampagne ab 10. Mai" },
+  { source:"kamp-digital",  target:"lead-camp1",      label:"Webinar-Leads: 33% End-to-End-Conversion (beste Qualität)" },
+  // HR Planung Kinder ↔ andere
+  { source:"hr-pieters",    target:"pipe-gap",        conflict:true, label:"Pieters Abgang: €430K Benelux at risk", conflictLabel:"🚨 Luc Pieters (Benelux RM) hat SEW-Angebot — Entscheidung bis 15. Juni. €430K Benelux-Pipeline und 3 Key-Prospects direkt gefährdet" },
+  { source:"hr-schreiber",  target:"ae-schreiber",    label:"PIP 15. Mai — bei Nicht-Erfüllung Trennung Q3" },
+  { source:"hr-vakanz",     target:"rf-high-risk",    conflict:true, label:"Vakante CSM-Lead = Risikoaccounts unterversorgt", conflictLabel:"🚨 Ohne CSM Team Lead kein ausreichendes Renewal-Management für KME, Hörmann, Müller — direkte Churn-Eskalation" },
+  { source:"hr-hofmann",    target:"acc-bergmann",    label:"Hofmann in Elternzeit → Bergmann ohne feste AE" },
+  // CRM Log Kinder ↔ andere
+  { source:"crm-mueller-blind", target:"acc-mueller", conflict:true, label:"Koch-Mail 2.Mai: Zimmermann nicht informiert", conflictLabel:"🚨 Koch (Müller) schrieb 2. Mai: 'Wir planen QBR als Druckmittel'. Zimmermann hat diese Mail noch nicht gesehen — geht unvorbereitet in QBR" },
+  { source:"crm-bergmann-unread", target:"acc-bergmann", conflict:true, label:"Bergmann-Inbound €41K — Mail nie geöffnet", conflictLabel:"🚨 Bergmann sendete 28. April RFQ €41K (Frist 15. Mai). HubSpot: Engel hat die Mail nicht geöffnet. Bei Nicht-Reaktion → Wettbewerber" },
+  { source:"crm-zeller-overdue", target:"acc-zeller", label:"Wien-Projekt-Angebot 2 Wochen überfällig" },
+  { source:"crm-kme-threat", target:"esc-kme",        label:"Wechseldrohung 30. April → Service 8. Mai entscheidend" },
+  { source:"crm-mueller-blind", target:"esc-mueller", label:"Koch nutzt SLA-Verletzung als Druckmittel beim QBR" },
 ];
 
 // ═══════════════════════════════════════════════════════

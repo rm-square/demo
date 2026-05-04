@@ -19,6 +19,19 @@
 
 ---
 
+## Messeergebnisse — Abgeschlossene Events (Historisch)
+
+| Messe | Datum | Leads erfasst | MQLs | SQLs | Opportunities | Pipeline (offen) |
+|---|---|---|---|---|---|---|
+| Hannover Messe 2024 | Mai 2024 | 162 | 38 | 17 | 14 | €180K (abgeschlossen) |
+| SPS Nürnberg 2024 | Nov 2024 | 143 | 31 | 14 | 9 | €95K (abgeschlossen) |
+| SPS Nürnberg Feb 2025 | 25.–27. Feb 2025 | **187** | **42** | **19** | **8** | **€290K (offen)** |
+| Hannover Messe 2025 | 05.–09. Mai 2025 | läuft — finale Zahlen ab 13. Mai | — | — | — | — |
+
+**Letztes abgeschlossenes Event:** SPS Februar 2025 — 187 Leads, 42 MQLs, 19 SQLs, 8 Opportunities, €290K Pipeline offen.
+
+---
+
 ## Nachbericht SPS Februar 2025
 
 **Stand:** Halle 4, C18
