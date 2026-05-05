@@ -517,7 +517,7 @@ function linkPath(d) {
   const bend = Math.min(dr * 0.2, 45);
   const mx = (sx + tx) / 2 + nx * bend;
   const my = (sy + ty) / 2 + ny * bend;
-  return `M${sx},${sy}Q${mx},${my}${tx},${ty}`;
+  return `M${sx},${sy}Q${mx},${my} ${tx},${ty}`;
 }
 
 // Bézier point at parameter t (for particle interpolation)
