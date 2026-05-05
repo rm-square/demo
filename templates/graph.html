@@ -32,9 +32,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 #svg-container { flex: 1; position: relative; overflow: hidden; }
 svg { width: 100%; height: 100%; }
 
-.link { pointer-events: stroke; }
-.link.child-link { stroke-dasharray: 3,3; }
-.link.dimmed { opacity: 0.04 !important; }
+.link-path { pointer-events: stroke; fill: none; }
+.link-path.child-link { stroke-dasharray: 3,4; }
+.link-path.dimmed { opacity: 0.03 !important; }
+.particle { pointer-events: none; }
 
 .node { cursor: pointer; }
 .node.dimmed { opacity: 0.07; }
@@ -502,10 +503,45 @@ cm.append("feMergeNode").attr("in", "SourceGraphic");
 
 const g = svg.append("g");
 const gLinks = g.append("g").attr("class", "links");
+const gParticles = g.append("g").attr("class", "particles");
 const gNodes = g.append("g").attr("class", "nodes");
 
+// Curved path for links — quadratic Bézier with perpendicular offset
+function linkPath(d) {
+  const sx = d.source.x, sy = d.source.y;
+  const tx = d.target.x, ty = d.target.y;
+  if (d.type === 'child') return `M${sx},${sy}L${tx},${ty}`;
+  const dx = tx - sx, dy = ty - sy;
+  const dr = Math.sqrt(dx*dx + dy*dy) || 1;
+  const nx = -dy / dr, ny = dx / dr;
+  const bend = Math.min(dr * 0.2, 45);
+  const mx = (sx + tx) / 2 + nx * bend;
+  const my = (sy + ty) / 2 + ny * bend;
+  return `M${sx},${sy}Q${mx},${my}${tx},${ty}`;
+}
+
+// Bézier point at parameter t (for particle interpolation)
+function bezierPoint(d, t) {
+  const sx = d.source.x, sy = d.source.y;
+  const tx = d.target.x, ty = d.target.y;
+  const dx = tx - sx, dy = ty - sy;
+  const dr = Math.sqrt(dx*dx + dy*dy) || 1;
+  const nx = -dy / dr, ny = dx / dr;
+  const bend = Math.min(dr * 0.2, 45);
+  const mx = (sx + tx) / 2 + nx * bend;
+  const my = (sy + ty) / 2 + ny * bend;
+  const u = 1 - t;
+  return { x: u*u*sx + 2*u*t*mx + t*t*tx, y: u*u*sy + 2*u*t*my + t*t*ty };
+}
+
+let currentZoomScale = 1;
 const zoom = d3.zoom().scaleExtent([0.15, 4])
-  .on("zoom", e => g.attr("transform", e.transform));
+  .on("zoom", e => {
+    g.attr("transform", e.transform);
+    currentZoomScale = e.transform.k;
+    const labelOpacity = currentZoomScale < 0.5 ? 0 : currentZoomScale < 0.85 ? (currentZoomScale - 0.5) / 0.35 : 1;
+    gNodes.selectAll("text").attr("opacity", labelOpacity);
+  });
 svg.call(zoom);
 
 const drag = d3.drag()
@@ -519,12 +555,16 @@ function nodeRadius(d) {
 }
 
 const simulation = d3.forceSimulation(simNodes)
-  .force("link", d3.forceLink(simLinks).id(d => d.id).distance(d => d.type === 'child' ? 70 : 155).strength(d => d.type === 'child' ? 0.9 : 0.5))
-  .force("charge", d3.forceManyBody().strength(d => parentIds.has(d.id) ? -500 : -120))
+  .alphaDecay(0.018)
+  .force("link", d3.forceLink(simLinks).id(d => d.id).distance(d => d.type === 'child' ? 75 : 165).strength(d => d.type === 'child' ? 0.85 : 0.45))
+  .force("charge", d3.forceManyBody().strength(d => parentIds.has(d.id) ? -560 : -130))
   .force("center", d3.forceCenter(W / 2, H / 2))
-  .force("collision", d3.forceCollide().radius(d => nodeRadius(d) + 16))
-  .force("x", d3.forceX(W/2).strength(0.025))
-  .force("y", d3.forceY(H/2).strength(0.025));
+  .force("collision", d3.forceCollide().radius(d => nodeRadius(d) + 18))
+  .force("x", d3.forceX(W/2).strength(0.022))
+  .force("y", d3.forceY(H/2).strength(0.022));
+
+// Gentle periodic nudge — keeps the graph feeling alive
+setInterval(() => { if (simulation.alpha() < 0.05) simulation.alpha(0.06).restart(); }, 9000);
 
 // ═══════════════════════════════════════════════════════
 // RENDER
@@ -532,13 +572,13 @@ const simulation = d3.forceSimulation(simNodes)
 let linkSel, nodeSel;
 
 function updateGraph() {
-  linkSel = gLinks.selectAll("line").data(simLinks, d => {
+  linkSel = gLinks.selectAll("path.link-path").data(simLinks, d => {
     const s = typeof d.source === 'object' ? d.source.id : d.source;
     const t = typeof d.target === 'object' ? d.target.id : d.target;
     return `${s}--${t}`;
   }).join(
-    enter => enter.append("line")
-      .attr("class", d => ["link", d.type === 'child' ? "child-link" : ""].join(" "))
+    enter => enter.append("path")
+      .attr("class", d => ["link-path", d.type === 'child' ? "child-link" : ""].join(" "))
       .attr("stroke", d => d.conflict ? "#ef4444" : d.type === 'child' ? "#1e2e45" : "#1a3050")
       .attr("stroke-width", d => d.conflict ? 2.5 : d.type === 'child' ? 1 : 1.3)
       .attr("stroke-opacity", d => d.conflict ? 0.8 : d.type === 'child' ? 0.4 : 0.45)
@@ -662,9 +702,7 @@ function updateGraph() {
   simulation.nodes(simNodes);
   simulation.force("link").links(simLinks);
   simulation.on("tick", () => {
-    gLinks.selectAll("line")
-      .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
-      .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+    gLinks.selectAll("path.link-path").attr("d", linkPath);
     gNodes.selectAll("g.node").attr("transform", d => `translate(${d.x},${d.y})`);
   });
 
@@ -673,6 +711,45 @@ function updateGraph() {
 
   updateStats();
 }
+
+// ═══════════════════════════════════════════════════════
+// PARTICLE FLOW — animated dots along conflict edges
+// ═══════════════════════════════════════════════════════
+let particleInterval = null;
+
+function spawnParticle() {
+  const conflicts = simLinks.filter(l => l.conflict && l.source && l.source.x != null);
+  if (!conflicts.length) return;
+  const link = conflicts[Math.floor(Math.random() * conflicts.length)];
+
+  const dur = 1400 + Math.random() * 900;
+  const p = gParticles.append("circle")
+    .attr("class", "particle")
+    .attr("r", 2.8)
+    .attr("fill", "#ef4444")
+    .attr("filter", "url(#conflict-glow)")
+    .attr("opacity", 0);
+
+  let start = null;
+  function step(ts) {
+    if (!start) start = ts;
+    const t = Math.min((ts - start) / dur, 1);
+    const fadeIn = Math.min(t * 8, 1);
+    const fadeOut = t > 0.85 ? 1 - (t - 0.85) / 0.15 : 1;
+    const pt = bezierPoint(link, t);
+    p.attr("transform", `translate(${pt.x},${pt.y})`)
+     .attr("opacity", fadeIn * fadeOut * 0.9);
+    if (t < 1) requestAnimationFrame(step);
+    else p.remove();
+  }
+  requestAnimationFrame(step);
+}
+
+function startParticles() {
+  if (particleInterval) clearInterval(particleInterval);
+  particleInterval = setInterval(spawnParticle, 320);
+}
+startParticles();
 
 // ═══════════════════════════════════════════════════════
 // EXPAND / COLLAPSE
@@ -735,7 +812,7 @@ function selectNode(d) {
 function deselectNode() {
   selectedNodeId = null;
   gNodes.selectAll("g.node").classed("dimmed", false).classed("selected", false).attr("filter", null);
-  gLinks.selectAll("line").classed("dimmed", false);
+  gLinks.selectAll("path.link-path").classed("dimmed", false);
   document.getElementById("detail-panel").classList.remove("visible");
   document.getElementById("stats-bar").classList.remove("panel-open");
 }
@@ -755,7 +832,7 @@ function applyHighlight(nodeId) {
     .classed("selected", d => d.id === nodeId)
     .attr("filter", d => d.id === nodeId ? `url(#sel-glow-${d.color.replace('#','')})` : null);
 
-  gLinks.selectAll("line").classed("dimmed", l => {
+  gLinks.selectAll("path.link-path").classed("dimmed", l => {
     const s = typeof l.source === 'object' ? l.source.id : l.source;
     const t = typeof l.target === 'object' ? l.target.id : l.target;
     return !connected.has(s) || !connected.has(t);
