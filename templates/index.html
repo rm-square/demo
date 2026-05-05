@@ -118,40 +118,6 @@ body {
   font-weight: 600;
 }
 
-/* DEMO BUTTONS */
-.demo-btn {
-  width: 100%;
-  text-align: left;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-bottom: 8px;
-  cursor: pointer;
-  transition: all 0.15s;
-  color: var(--text);
-}
-.demo-btn:hover {
-  background: var(--bg3);
-  border-color: var(--blue);
-}
-.demo-btn.ext:hover {
-  border-color: var(--ext);
-}
-.demo-btn:last-child { margin-bottom: 0; }
-.demo-btn-icon { font-size: 16px; margin-bottom: 5px; }
-.demo-btn-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 3px;
-}
-.demo-btn-desc {
-  font-size: 11px;
-  color: var(--text3);
-  line-height: 1.4;
-}
-
 /* DATA SOURCES */
 .source-item {
   display: flex;
@@ -617,29 +583,6 @@ textarea::placeholder { color: var(--text3); }
   <!-- SIDEBAR -->
   <div class="sidebar">
 
-    <div class="sidebar-section">
-      <div class="sidebar-label">Demo-Szenen</div>
-
-      <button class="demo-btn ext" onclick="loadRfpDemo()">
-        <div class="demo-btn-icon">📋</div>
-        <div class="demo-btn-title">RFQ analysieren</div>
-        <div class="demo-btn-desc">Brenner Bratislava · €740K · RFQ von außen einfügen</div>
-      </button>
-
-      <button class="demo-btn" onclick="sendDemo('briefing')">
-        <div class="demo-btn-icon">🎯</div>
-        <div class="demo-btn-title">Kundentermin vorbereiten</div>
-        <div class="demo-btn-desc">QBR Müller Maschinenbau · heute in 20 Min</div>
-      </button>
-
-      <button class="demo-btn" onclick="sendDemo('pricing')">
-        <div class="demo-btn-icon">💰</div>
-        <div class="demo-btn-title">Pricing-Empfehlung</div>
-        <div class="demo-btn-desc">Wie aggressiv bei Brenner? Wettbewerb Siemens</div>
-      </button>
-
-    </div>
-
     <div class="sidebar-section sources-pane" id="sourcesPane">
       <div class="sidebar-label">Wissensbasis</div>
       <div class="stats-grid" style="margin-bottom:12px">
@@ -733,151 +676,6 @@ textarea::placeholder { color: var(--text3); }
 </div>
 
 <script>
-const DEMO_PROMPTS = {
-  briefing: `Ich habe in 20 Minuten den QBR-Termin bei Müller Maschinenbau in Ingolstadt. Mein Gesprächspartner ist Einkaufsleiter Bernd Koch.
-
-Bereite mich vollständig vor:
-1. Was ist der aktuelle Status des Accounts — was läuft gut, was nicht?
-2. Was weiß ich über Bernd Koch und wie er verhandelt?
-3. Gibt es offene Probleme oder Eskalationen die er ansprechen wird — und wie antworte ich darauf?
-4. Was ist mein Ziel für diesen Termin und wie argumentiere ich es?
-5. Was darf ich ihm versprechen — und was nicht (Produkte, Preise, Konditionen)?
-6. Was ist meine Verhandlungsstrategie für die CC-Renewal?`,
-
-  pricing: `Wir sind im Wettbewerb mit Siemens um den Brenner Bratislava Deal (€740K Volumen, 90 Komponenten).
-
-Gib mir eine konkrete Pricing-Empfehlung:
-1. Was ist unser kalkulierter Listenpreis für alle drei Positionen (60x SDX-22 SI + 30x PD-3000 + CareConnect 36M)?
-2. Welchen Rabatt kann ich eigenständig geben — und welchen erst nach Freigabe?
-3. Wie preisen wir gegen Siemens? Wo sind wir günstiger, wo teurer, und wie argumentieren wir den Mehrwert?
-4. Gibt es eine "aggressive but defensible" Preisposition die den Deal gewinnt ohne die Marge zu zerstören?
-5. Welche Gegenleistung soll ich für jeden Rabattschritt fordern?`
-};
-
-const BRENNER_RFQ = `# RFQ — Brenner Automotive Systems AG
-## Anfrage: Antriebstechnik Neues Werk Bratislava
-
-**Dokument-Nr.:** BAS-PURCH-2025-0441
-**Datum:** 28. April 2025
-**Anfragender:** Einkauf, Brenner Automotive Systems AG, Stuttgart
-**Ansprechpartner:** Frau Ingrid Hoffmann, Senior Einkäuferin Investitionsgüter
-**Antwortfrist:** 23. Mai 2025, 17:00 Uhr
-**Angebotsabgabe:** per E-Mail an i.hoffmann@brenner-automotive.de und procurement@brenner-automotive.de
-
----
-
-## 1. Hintergrund und Projektbeschreibung
-
-Brenner Automotive Systems AG errichtet in Bratislava (Slowakei) ein neues Produktionswerk für Fahrzeugstrukturteile (Karosseriekomponenten). Produktionsstart ist für **Q4/2025** geplant. Das Werk umfasst 3 Fertigungslinien sowie 2 Prüfstände.
-
-Wir suchen einen Lieferanten für industrielle Antriebs- und Getriebesysteme für dieses Werk. Es handelt sich um einen Rahmenauftrag der sowohl die Erstausstattung als auch den laufenden Betrieb (Ersatzteile, Service) umfasst.
-
----
-
-## 2. Technische Anforderungen
-
-### 2.1 Servoantriebe (Pos. 1)
-
-**Menge:** 60 Stück
-**Nennleistung:** 22 kW
-**Pflichtanforderungen:**
-- Integrierte Sicherheitsfunktionen: STO, SS1, SLS (Safety-Integrated)
-- Feldbusschnittstelle: **PROFINET UND EtherCAT** — beide Protokolle müssen nativ unterstützt werden (kein Konverter)
-- Schutzklasse: min. IP65
-- Encoder: Multiturn-Absolutencoder, batterielose Ausführung
-- Zertifizierungen: CE, SIL2, UL
-
-**Wünschenswert:**
-- Cloud-Parametrierung und Ferndiagnose
-- DSGVO-konforme Datenverarbeitung bei Remote-Funktionen
-
-### 2.2 Präzisionsgetriebe (Pos. 2)
-
-**Menge:** 30 Stück
-**Max. Drehmoment:** 3.000 Nm
-**Übersetzungsbereich:** 10:1 bis 250:1
-**Pflichtanforderungen:**
-- Spielfreiheit: ≤1 Bogenminute
-- Lebensdauerschmierung
-- IP65 Standard
-- Flanschkompatibilität mit Antrieben aus Pos. 1
-
-**Wünschenswert:**
-- IoT-fähige Ausführung (Temperatur- und Vibrationsüberwachung)
-
-### 2.3 Wartung und Service (Pos. 3)
-
-Für die gesamte installierte Basis (Pos. 1 + 2) wird ein Servicevertrag gesucht mit:
-- Reaktionszeit Vor-Ort: max. 8 Stunden (Bratislava-Standort)
-- 24/7-Hotline
-- Ersatzteil-Verfügbarkeit: Kritische Teile innerhalb 24h am Standort
-- Vertragslaufzeit: 36 Monate mit Verlängerungsoption
-- **Reporting:** Vierteljährliche Berichte zu Anlagenverfügbarkeit und präventiven Maßnahmen
-
----
-
-## 3. Kommerzielle Anforderungen
-
-### 3.1 Preisstruktur
-Bitte gliedern Sie Ihr Angebot nach:
-- Einzelpreis je Antrieb (Pos. 1)
-- Einzelpreis je Getriebe (Pos. 2)
-- Jahrespreis Servicevertrag (Pos. 3)
-- Gesamtpreis Erstausstattung
-
-### 3.2 Lieferzeit
-**Verbindliche Anforderung:** Gesamtlieferung bis spätestens **15. September 2025** (12 Wochen nach Auftragserteilung, geplant ca. 15. Juni 2025). Lieferverzug wird mit 0,5% des Auftragswerts je angefangener Woche Verzug vertraglich vereinbart.
-
-### 3.3 Zahlungsbedingungen
-Brenner-Standard: **60 Tage netto** ab Lieferung und Rechnungseingang.
-Anzahlungen werden grundsätzlich nicht geleistet.
-Bitte bestätigen Sie Akzeptanz oder nennen Sie Alternativen.
-
-### 3.4 Rahmenvertrag
-Wir beabsichtigen, mit dem beauftragten Lieferanten einen **3-Jahres-Rahmenvertrag** für Nachbestellungen und Ersatzteile abzuschließen. Preise sollen für 24 Monate festgeschrieben werden.
-
----
-
-## 4. Bewertungskriterien
-
-Angebote werden nach folgenden Kriterien bewertet:
-
-| Kriterium | Gewichtung |
-|---|---|
-| Technische Eignung (Erfüllung Pflichtanforderungen) | 35% |
-| Gesamtpreis (TCO 3 Jahre) | 30% |
-| Lieferzuverlässigkeit / Referenzen | 20% |
-| Service-Kapazität Bratislava / DACH | 10% |
-| Nachhaltigkeit / CO₂-Reporting | 5% |
-
-Angebote die Pflichtanforderungen nicht vollständig erfüllen werden nicht weiter berücksichtigt.
-
----
-
-## 5. Formale Anforderungen
-
-Bitte reichen Sie ein:
-1. Technisches Datenblatt je Produkttyp (auf Englisch oder Deutsch)
-2. Ausgefülltes Preisblatt (Vorlage folgt als Anlage)
-3. Referenzliste ≥3 vergleichbare Projekte (Automotive-Segment bevorzugt)
-4. Zertifikate (CE, SIL2, UL)
-5. Servicekonzept Bratislava mit Techniker-Ressourcen und Reaktionszeit-Nachweis
-6. Bestätigung oder Gegenvorschlag zu Zahlungsbedingungen
-7. DSGVO-Konformitätserklärung für Remote-Funktionen
-
----
-
-## 6. Rückfragen
-
-Technische Rückfragen: Herr Marek Kowalczyk, Fabrikleiter Bratislava (m.kowalczyk@brenner-automotive.com)
-Kommerzielle Rückfragen: Frau Ingrid Hoffmann (i.hoffmann@brenner-automotive.de)
-
-Rückfragen nur schriftlich, bis **09. Mai 2025**.
-
----
-
-*Brenner Automotive Systems AG behält sich vor, Angebote ohne Angabe von Gründen abzulehnen. Dieses RFQ stellt keine Bestellung und keine Verpflichtung zum Vertragsschluss dar.*`;
-
 let isLoading = false;
 let docStripOpen = false;
 
@@ -891,13 +689,6 @@ function handleKey(e) {
 function autoResize(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-}
-
-function sendDemo(type) {
-  const prompt = DEMO_PROMPTS[type];
-  document.getElementById('inputField').value = prompt;
-  autoResize(document.getElementById('inputField'));
-  sendMessage();
 }
 
 function toggleDocStrip() {
@@ -924,16 +715,6 @@ function clearDoc() {
   document.getElementById('docArea').value = '';
   updateDocState();
   if (docStripOpen) toggleDocStrip();
-}
-
-function loadRfpDemo() {
-  if (!docStripOpen) toggleDocStrip();
-  document.getElementById('docArea').value = BRENNER_RFQ;
-  updateDocState();
-  const input = document.getElementById('inputField');
-  input.value = 'Ich habe gerade diesen RFQ erhalten. Analysiere ihn: Welche Anforderungen können wir erfüllen, welche nicht? Wo gibt es Konflikte mit unseren internen Daten (DoA, SLA, Roadmap)? Was muss ich vor der Antwort klären?';
-  autoResize(input);
-  input.focus();
 }
 
 async function sendMessage() {
