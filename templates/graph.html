@@ -56,7 +56,7 @@ svg { width: 100%; height: 100%; }
 .tt-meta strong { color: #60a5fa; }
 .tt-conflict { margin-top: 5px; font-size: 10.5px; color: #fca5a5; }
 
-.edge-tt { position: absolute; background: rgba(6,11,22,0.98); border: 1px solid #7f1d1d; border-radius: 7px; padding: 9px 13px; pointer-events: none; opacity: 0; transition: opacity 0.12s; max-width: 240px; z-index: 100; font-size: 11.5px; color: #fca5a5; box-shadow: 0 4px 20px rgba(239,68,68,0.2); }
+.edge-tt { position: absolute; background: rgba(6,11,22,0.98); border: 1px solid #7c2d12; border-radius: 7px; padding: 9px 13px; pointer-events: none; opacity: 0; transition: opacity 0.12s; max-width: 240px; z-index: 100; font-size: 11.5px; color: #fdba74; box-shadow: 0 4px 20px rgba(249,115,22,0.2); }
 .edge-tt.vis { opacity: 1; }
 
 /* DETAIL PANEL */
@@ -146,6 +146,7 @@ svg { width: 100%; height: 100%; }
     <span class="tb-btn" onclick="collapseAll()">↺ Einklappen</span>
     <span class="tb-btn" onclick="expandAll()">⊞ Aufklappen</span>
     <span class="tb-btn" onclick="resetView()">⊙ Zentrieren</span>
+    <span class="tb-btn" id="clear-dyn-btn" style="display:none;color:#fb923c;border-color:#7c2d12" onclick="clearDynamicConflicts()">✕ Chat-Konflikte</span>
     <a href="/" class="tb-btn">← Chat</a>
   </div>
 </div>
@@ -162,7 +163,7 @@ svg { width: 100%; height: 100%; }
     <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div>Kunden / CS</div>
     <div class="leg-sep"></div>
     <div class="leg-item"><div class="leg-line" style="background:#1e3a5f"></div>Verbindung</div>
-    <div class="leg-item"><div class="leg-line" style="background:#ef4444"></div>Konflikt</div>
+    <div class="leg-item"><div class="leg-line" style="background:#f97316"></div>Konflikt (Chat)</div>
     <div class="leg-sep"></div>
     <div class="leg-hint">Klick: Details + Aufklappen<br>Hintergrund: Auswahl aufheben<br>Drag: verschieben · Scroll: Zoom</div>
   </div>
@@ -171,6 +172,7 @@ svg { width: 100%; height: 100%; }
     <div class="s-pill"><div class="s-num" id="stat-links">0</div><div class="s-lbl">Links</div></div>
     <div class="s-pill"><div class="s-num" id="stat-exp">0</div><div class="s-lbl">Aufgeklappt</div></div>
     <div class="s-pill"><div class="s-num" style="color:#fca5a5" id="stat-conf">0</div><div class="s-lbl">Konflikte</div></div>
+    <div class="s-pill" id="stat-dyn-pill" style="display:none"><div class="s-num" style="color:#fb923c" id="stat-dyn">0</div><div class="s-lbl">Chat-Neu</div></div>
   </div>
 
   <svg id="graph"></svg>
@@ -462,12 +464,46 @@ const CROSS_LINKS = [
   { source:"crm-mueller-blind", target:"esc-mueller", label:"Koch nutzt SLA-Verletzung als Druckmittel beim QBR" },
 ];
 
+// Strip all hardcoded conflict flags — conflicts appear only via dynamic chat detection
+[...PARENT_LINKS, ...CROSS_LINKS].forEach(l => { delete l.conflict; delete l.conflictLabel; });
+
+// ═══════════════════════════════════════════════════════
+// DOC PATH → NODE ID (for dynamic conflict detection from chat)
+// ═══════════════════════════════════════════════════════
+const DOC_TO_NODE = {
+  'commercial/ae-performance-q1-2025': 'aeperf',
+  'commercial/deal-desk-prozess': 'dealdesk',
+  'commercial/pipeline-deals-2025': 'quota',
+  'commercial/preisliste-2025': 'preisliste',
+  'commercial/quota-pipeline-2025': 'quota',
+  'commercial/win-loss-analyse-2024-2025': 'winloss',
+  'company/firmenprofil': 'firmenprofil',
+  'company/messen-events-2025': 'messen',
+  'company/personalplanung-hr-2025': 'hrplan',
+  'contracts/delegation-of-authority': 'doa',
+  'contracts/standard-vertragsklauseln': 'vertragsklauseln',
+  'customers/careconnect-nutzungsdaten': 'ccusage',
+  'customers/crm-aktivitaeten-log': 'crmlog',
+  'customers/cs-dashboard-q1-2025': 'csdashboard',
+  'customers/kundenaccounts': 'accounts',
+  'customers/kundendatenbank': 'accounts',
+  'customers/renewal-forecast-q2-q3-2025': 'renewalforecast',
+  'marketing/kampagnen-roi-attribution': 'kampagnen',
+  'marketing/lead-management': 'leads',
+  'marketing/leads-datenbank-2025': 'leads',
+  'products/produktuebersicht': 'produkte',
+  'products/roadmap-2025-2026': 'roadmap',
+  'sales/battle-cards': 'battlecards',
+  'sales/sales-plays': 'salesplays',
+};
+
 // ═══════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════
 const nodeMap = new Map([...PARENTS, ...CHILDREN].map(n => [n.id, n]));
 const parentIds = new Set(PARENTS.map(p => p.id));
 let expanded = new Set();
+let dynamicConflictEdges = [];
 let selectedNodeId = null;
 let simNodes = [...PARENTS.map(n => ({...n}))];
 let simLinks = [...PARENT_LINKS.map(l => ({...l}))];
@@ -579,7 +615,7 @@ function updateGraph() {
   }).join(
     enter => enter.append("path")
       .attr("class", d => ["link-path", d.type === 'child' ? "child-link" : ""].join(" "))
-      .attr("stroke", d => d.conflict ? "#ef4444" : d.type === 'child' ? "#1e2e45" : "#1a3050")
+      .attr("stroke", d => d.conflict ? (d.dynamic ? "#f97316" : "#ef4444") : d.type === 'child' ? "#1e2e45" : "#1a3050")
       .attr("stroke-width", d => d.conflict ? 2.5 : d.type === 'child' ? 1 : 1.3)
       .attr("stroke-opacity", d => d.conflict ? 0.8 : d.type === 'child' ? 0.4 : 0.45)
       .attr("stroke-dasharray", d => d.conflict ? "6,3" : null)
@@ -726,7 +762,7 @@ function spawnParticle() {
   const p = gParticles.append("circle")
     .attr("class", "particle")
     .attr("r", 2.8)
-    .attr("fill", "#ef4444")
+    .attr("fill", link.dynamic ? "#f97316" : "#ef4444")
     .attr("filter", "url(#conflict-glow)")
     .attr("opacity", 0);
 
@@ -771,8 +807,9 @@ function expandNode(nodeId) {
   const childLinks = children.map(c => ({ source: nodeId, target: c.id, type: 'child', label: '' }));
   const allVisibleIds = new Set([...simNodes.map(n => n.id), ...children.map(c => c.id)]);
   const newCross = CROSS_LINKS.filter(l => allVisibleIds.has(l.source) && allVisibleIds.has(l.target) && !linkExists(l.source, l.target));
+  const newDynCross = dynamicConflictEdges.filter(l => allVisibleIds.has(l.source) && allVisibleIds.has(l.target) && !linkExists(l.source, l.target));
   simNodes = [...simNodes, ...children];
-  simLinks = [...simLinks, ...childLinks, ...newCross];
+  simLinks = [...simLinks, ...childLinks, ...newCross, ...newDynCross];
   simulation.alpha(0.5).restart();
   updateGraph();
 }
@@ -984,6 +1021,28 @@ function updateStats() {
   document.getElementById("stat-conf").textContent = simLinks.filter(l => l.conflict).length;
   document.getElementById("stats-sub").textContent =
     `${simNodes.length} Nodes · ${simLinks.length} Links · ${expanded.size} aufgeklappt · Klick für Details`;
+  const dynCount = dynamicConflictEdges.length;
+  document.getElementById('stat-dyn').textContent = dynCount;
+  document.getElementById('stat-dyn-pill').style.display = dynCount > 0 ? '' : 'none';
+  document.getElementById('clear-dyn-btn').style.display = dynCount > 0 ? '' : 'none';
+}
+
+function clearDynamicConflicts() {
+  localStorage.removeItem('hartmann_dyn_conflicts');
+  dynamicConflictEdges = [];
+  simLinks = simLinks.filter(l => !l.dynamic);
+  // Reset conflict rings that were only dynamic (restore to static state)
+  gNodes.selectAll('g.node').each(function(d) {
+    const hasStatic = [...PARENT_LINKS, ...CROSS_LINKS].some(l =>
+      l.conflict && (l.source === d.id || l.target === d.id)
+    );
+    d3.select(this).select('.conflict-ring')
+      .classed('has-conflict', hasStatic)
+      .attr('r', hasStatic ? nodeRadius(d) + 7 : 0)
+      .attr('stroke', '#ef4444');
+  });
+  simulation.alpha(0.3).restart();
+  updateGraph();
 }
 
 function expandAll() {
@@ -999,6 +1058,74 @@ function resetView() {
 }
 
 svg.on("click", () => deselectNode());
+
+// ═══════════════════════════════════════════════════════
+// DYNAMIC CONFLICT DETECTION — reads from localStorage written by chat page
+// ═══════════════════════════════════════════════════════
+function loadDynamicConflicts() {
+  const raw = localStorage.getItem('hartmann_dyn_conflicts');
+  if (!raw) return;
+  let pairs;
+  try { pairs = JSON.parse(raw); } catch { return; }
+  if (!pairs.length) return;
+
+  let changed = false;
+  pairs.forEach(([doc1, doc2]) => {
+    const n1 = DOC_TO_NODE[doc1];
+    const n2 = DOC_TO_NODE[doc2];
+    if (!n1 || !n2 || n1 === n2) return;
+
+    // Skip if already a static conflict between these nodes
+    const alreadyStatic = [...PARENT_LINKS, ...CROSS_LINKS].some(l =>
+      l.conflict && ((l.source === n1 && l.target === n2) || (l.source === n2 && l.target === n1))
+    );
+    if (alreadyStatic) return;
+
+    // Skip if already registered as dynamic
+    if (dynamicConflictEdges.some(e =>
+      (e.source === n1 && e.target === n2) || (e.source === n2 && e.target === n1)
+    )) return;
+
+    dynamicConflictEdges.push({
+      source: n1, target: n2,
+      conflict: true, dynamic: true,
+      label: 'Chat-Analyse',
+      conflictLabel: `🔍 Konflikt erkannt: ${doc1.split('/').pop()} ↔ ${doc2.split('/').pop()}`,
+    });
+    changed = true;
+  });
+
+  if (!changed) return;
+
+  // Add new dynamic edges to simLinks for currently visible node pairs
+  const visibleIds = new Set(simNodes.map(n => n.id));
+  dynamicConflictEdges.forEach(edge => {
+    if (!visibleIds.has(edge.source) || !visibleIds.has(edge.target)) return;
+    if (linkExists(edge.source, edge.target)) return;
+    simLinks.push({ ...edge });
+  });
+
+  // Update conflict rings for newly-conflicted nodes (orange stroke)
+  dynamicConflictEdges.forEach(edge => {
+    [edge.source, edge.target].forEach(nid => {
+      gNodes.selectAll('g.node').filter(d => d.id === nid)
+        .select('.conflict-ring')
+        .classed('has-conflict', true)
+        .attr('r', d => nodeRadius(d) + 7)
+        .attr('stroke', '#f97316');
+    });
+  });
+
+  simulation.alpha(0.3).restart();
+  updateGraph();
+
+  // Update dynamic-conflict pill
+  const count = dynamicConflictEdges.length;
+  document.getElementById('stat-dyn').textContent = count;
+  document.getElementById('stat-dyn-pill').style.display = count > 0 ? '' : 'none';
+}
+
+setInterval(loadDynamicConflicts, 1500);
 
 // ═══════════════════════════════════════════════════════
 // INIT
