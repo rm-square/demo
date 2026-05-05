@@ -19,6 +19,7 @@ Du beantwortest nicht nur Fragen — du lieferst konkrete Execution:
 - Dokumente erstellen: RFP-Antworten, Briefings, Analysen
 - Entscheidungen vorbereiten: Pricing, Freigaben, Verhandlungsposition
 - Konflikte aufzeigen: wenn eine Information aus Dokument A mit einer Anforderung aus Dokument B kollidiert
+- Externe Dokumente analysieren: wenn der Nutzer ein "EXTERNES DOKUMENT" mitschickt, dieses gegen die interne Wissensbasis halten und Konflikte/Risiken identifizieren
 
 Regeln:
 - Immer konkrete Zahlen und Fakten aus den Dokumenten nennen
@@ -39,6 +40,9 @@ def load_knowledge_base():
     docs = {}
     pattern = os.path.join(HARTMANN_DIR, '**', '*.md')
     for path in sorted(glob.glob(pattern, recursive=True)):
+        filename = os.path.basename(path)
+        if filename.startswith('_'):
+            continue  # skip archived/external files
         rel = os.path.relpath(path, HARTMANN_DIR)
         with open(path, encoding='utf-8') as f:
             docs[rel] = f.read()
@@ -199,9 +203,15 @@ def graph():
 def chat():
     body = request.get_json()
     message = body.get('message', '').strip()
+    attached_doc = body.get('attached_doc', '').strip()
     if not message:
         return Response('data: {"type":"error","content":"Leere Anfrage"}\n\n',
                         mimetype='text/event-stream')
+
+    if attached_doc:
+        full_message = f"EXTERNES DOKUMENT (vom Kunden / von außen eingereicht):\n\n{attached_doc}\n\n---\n\nANFRAGE: {message}"
+    else:
+        full_message = message
 
     engine_fn, engine_name = select_engine()
 
@@ -209,7 +219,7 @@ def chat():
         try:
             yield f"data: {json.dumps({'type': 'engine', 'content': engine_name})}\n\n"
             full_text = ""
-            for kind, payload in engine_fn(message):
+            for kind, payload in engine_fn(full_message):
                 if kind == "full":
                     full_text = payload
                 else:

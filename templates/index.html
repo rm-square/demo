@@ -23,6 +23,7 @@
   --orange: #f97316;
   --red: #ef4444;
   --yellow: #eab308;
+  --ext: #8b5cf6;
 }
 
 body {
@@ -133,6 +134,9 @@ body {
 .demo-btn:hover {
   background: var(--bg3);
   border-color: var(--blue);
+}
+.demo-btn.ext:hover {
+  border-color: var(--ext);
 }
 .demo-btn:last-child { margin-bottom: 0; }
 .demo-btn-icon { font-size: 16px; margin-bottom: 5px; }
@@ -352,6 +356,90 @@ body {
   margin: 12px 0;
 }
 
+/* EXTERNAL DOC BUBBLE (in chat message) */
+.ext-doc-bubble {
+  background: rgba(139,92,246,.08);
+  border: 1px solid rgba(139,92,246,.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.ext-doc-bubble .ext-icon { color: var(--ext); font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.ext-doc-preview { flex: 1; }
+.ext-doc-preview .ext-title { font-weight: 600; color: #a78bfa; margin-bottom: 3px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+.ext-doc-preview .ext-snippet { color: var(--text3); line-height: 1.5; max-height: 60px; overflow: hidden; }
+
+/* DOCUMENT ATTACH STRIP */
+.doc-attach-strip {
+  display: none;
+  background: rgba(139,92,246,.07);
+  border: 1px solid rgba(139,92,246,.2);
+  border-radius: 10px 10px 0 0;
+  border-bottom: none;
+  padding: 10px 14px;
+}
+.doc-attach-strip.visible { display: block; }
+.doc-attach-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.doc-attach-label { font-size: 11px; font-weight: 600; color: #a78bfa; text-transform: uppercase; letter-spacing: .06em; flex: 1; }
+.doc-clear-btn { font-size: 11px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+.doc-clear-btn:hover { color: var(--text); background: rgba(255,255,255,.05); }
+#docArea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text2);
+  font-size: 12px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  line-height: 1.5;
+  resize: none;
+  height: 100px;
+  max-height: 180px;
+}
+#docArea::placeholder { color: var(--text3); font-family: inherit; }
+.doc-char-count { font-size: 10px; color: var(--text3); margin-top: 4px; text-align: right; }
+
+/* ATTACH BUTTON */
+.attach-btn {
+  width: 34px; height: 34px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  color: var(--text3);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.attach-btn:hover { border-color: var(--ext); color: #a78bfa; background: rgba(139,92,246,.1); }
+.attach-btn.active { border-color: var(--ext); color: #a78bfa; background: rgba(139,92,246,.15); }
+
+/* ATTACHED CHIP */
+.attached-chip {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #a78bfa;
+  background: rgba(139,92,246,.12);
+  border: 1px solid rgba(139,92,246,.25);
+  border-radius: 4px;
+  padding: 3px 8px;
+  width: fit-content;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+.attached-chip.visible { display: flex; }
+
+/* input-row when doc attached: connect visually to strip above */
+.input-row.has-doc { border-top-left-radius: 0; border-top-right-radius: 0; border-top-color: transparent !important; }
+
 /* REASONING TRACE */
 .reasoning-trace {
   background: #0c1426;
@@ -517,7 +605,7 @@ textarea::placeholder { color: var(--text3); }
   </div>
   <div class="topbar-badge">
     <div class="dot"></div>
-    22 Dokumente · 7 Bereiche · Claude Opus 4.7
+    21 Dokumente · 7 Bereiche · Claude Opus 4.7
     <span id="engineBadge" class="engine-badge" hidden></span>
     &nbsp;&nbsp;
     <a href="/graph" style="color:#60a5fa;font-size:12px;text-decoration:none;border:1px solid #1e3a5f;padding:3px 10px;border-radius:5px;">🕸 Wissensgraph</a>
@@ -532,10 +620,10 @@ textarea::placeholder { color: var(--text3); }
     <div class="sidebar-section">
       <div class="sidebar-label">Demo-Szenen</div>
 
-      <button class="demo-btn" onclick="sendDemo('rfp')">
+      <button class="demo-btn ext" onclick="loadRfpDemo()">
         <div class="demo-btn-icon">📋</div>
-        <div class="demo-btn-title">RFP-Antwort vorbereiten</div>
-        <div class="demo-btn-desc">Brenner Bratislava · €740K · Frist 23. Mai</div>
+        <div class="demo-btn-title">RFQ analysieren</div>
+        <div class="demo-btn-desc">Brenner Bratislava · €740K · RFQ von außen einfügen</div>
       </button>
 
       <button class="demo-btn" onclick="sendDemo('briefing')">
@@ -556,7 +644,7 @@ textarea::placeholder { color: var(--text3); }
       <div class="sidebar-label">Wissensbasis</div>
       <div class="stats-grid" style="margin-bottom:12px">
         <div class="stat-box">
-          <div class="stat-num">22</div>
+          <div class="stat-num">21</div>
           <div class="stat-lbl">Dokumente</div>
         </div>
         <div class="stat-box">
@@ -591,7 +679,6 @@ textarea::placeholder { color: var(--text3); }
       <div class="source-item" data-source="marketing/kampagnen-roi-attribution"><div class="source-dot" style="background:#06b6d4"></div><span class="source-name">marketing/kampagnen-roi</span><span class="source-badge">ROI</span></div>
       <div class="source-item" data-source="customers/kundenaccounts"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/kundenaccounts</span><span class="source-badge">CRM</span></div>
       <div class="source-item" data-source="customers/cs-dashboard-q1-2025"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/cs-dashboard</span><span class="source-badge">CS</span></div>
-      <div class="source-item" data-source="customers/rfp-brenner-bratislava-2025"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/rfp-brenner</span><span class="source-badge">RFQ</span></div>
       <div class="source-item" data-source="customers/renewal-forecast-q2-q3-2025"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/renewal-forecast-q2-q3</span><span class="source-badge">Renewals</span></div>
       <div class="source-item" data-source="customers/careconnect-nutzungsdaten"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/careconnect-nutzungsdaten</span><span class="source-badge">CC-Use</span></div>
       <div class="source-item" data-source="customers/crm-aktivitaeten-log"><div class="source-dot" style="background:#ef4444"></div><span class="source-name">customers/crm-aktivitaeten-log</span><span class="source-badge">Activity</span></div>
@@ -606,23 +693,40 @@ textarea::placeholder { color: var(--text3); }
         <div class="icon">🧠</div>
         <h2>Revenue Intelligence Assistant</h2>
         <p>Stelle eine Frage oder wähle eine Demo-Szene links.<br>
-        Der Assistent hat Zugriff auf alle 22 Dokumente und kann<br>
+        Der Assistent hat Zugriff auf alle 21 Dokumente und kann<br>
         Fragen beantworten, Dokumente erstellen und Entscheidungen vorbereiten.</p>
       </div>
     </div>
 
     <div class="input-area">
-      <div class="input-row">
-        <textarea
-          id="inputField"
-          placeholder="Frage stellen oder Aufgabe beschreiben …"
-          rows="1"
-          onkeydown="handleKey(event)"
-          oninput="autoResize(this)"
-        ></textarea>
-        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+      <div class="doc-attach-strip" id="docStrip">
+        <div class="doc-attach-header">
+          <span class="doc-attach-label">📄 Externes Dokument</span>
+          <span style="font-size:10px;color:var(--text3)">RFQ · Lastenheft · Kundenmail · Vertrag</span>
+          <button class="doc-clear-btn" onclick="clearDoc()">✕ entfernen</button>
+        </div>
+        <textarea id="docArea" placeholder="Dokument hier einfügen (copy/paste) …" oninput="updateDocState()"></textarea>
+        <div class="doc-char-count" id="docCharCount">0 Zeichen</div>
       </div>
-      <div class="input-hint">Enter zum Senden · Shift+Enter für neue Zeile</div>
+      <div class="input-row" id="inputRow">
+        <div class="input-left" style="flex:1;display:flex;flex-direction:column;">
+          <div class="attached-chip" id="attachedChip" onclick="toggleDocStrip()">
+            <span>📄</span><span id="chipLabel">Dokument angehängt</span>
+          </div>
+          <textarea
+            id="inputField"
+            placeholder="Frage stellen oder Aufgabe beschreiben …"
+            rows="1"
+            onkeydown="handleKey(event)"
+            oninput="autoResize(this)"
+          ></textarea>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:6px;flex-shrink:0;">
+          <button class="attach-btn" id="attachBtn" onclick="toggleDocStrip()" title="Externes Dokument anhängen">📎</button>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+        </div>
+      </div>
+      <div class="input-hint">Enter senden · Shift+Enter neue Zeile · 📎 Dokument anhängen</div>
     </div>
   </div>
 
@@ -630,16 +734,6 @@ textarea::placeholder { color: var(--text3); }
 
 <script>
 const DEMO_PROMPTS = {
-  rfp: `Bereite eine strukturierte Angebotsantwort auf den Brenner Bratislava RFQ vor (BAS-PURCH-2025-0441).
-
-Ich brauche:
-1. Fit-Score: Erfüllen wir alle Pflichtanforderungen? Was ist kritisch?
-2. Produktmapping: Welche unserer Produkte adressieren welche RFQ-Positionen, mit konkreten Modellnummern und Preisen?
-3. Empfohlener Angebotspreis (Pos. 1+2+3) mit Rabattposition und warum
-4. Zahlungsbedingungen: Brenner fordert 60 Tage netto + keine Anzahlung — was darf ich zusagen, was braucht Freigabe?
-5. Welche internen Freigaben (DoA) sind vor Angebotsabgabe einzuholen?
-6. Risiken die ich kennen muss bevor ich das Angebot abschicke`,
-
   briefing: `Ich habe in 20 Minuten den QBR-Termin bei Müller Maschinenbau in Ingolstadt. Mein Gesprächspartner ist Einkaufsleiter Bernd Koch.
 
 Bereite mich vollständig vor:
@@ -660,7 +754,132 @@ Gib mir eine konkrete Pricing-Empfehlung:
 5. Welche Gegenleistung soll ich für jeden Rabattschritt fordern?`
 };
 
+const BRENNER_RFQ = `# RFQ — Brenner Automotive Systems AG
+## Anfrage: Antriebstechnik Neues Werk Bratislava
+
+**Dokument-Nr.:** BAS-PURCH-2025-0441
+**Datum:** 28. April 2025
+**Anfragender:** Einkauf, Brenner Automotive Systems AG, Stuttgart
+**Ansprechpartner:** Frau Ingrid Hoffmann, Senior Einkäuferin Investitionsgüter
+**Antwortfrist:** 23. Mai 2025, 17:00 Uhr
+**Angebotsabgabe:** per E-Mail an i.hoffmann@brenner-automotive.de und procurement@brenner-automotive.de
+
+---
+
+## 1. Hintergrund und Projektbeschreibung
+
+Brenner Automotive Systems AG errichtet in Bratislava (Slowakei) ein neues Produktionswerk für Fahrzeugstrukturteile (Karosseriekomponenten). Produktionsstart ist für **Q4/2025** geplant. Das Werk umfasst 3 Fertigungslinien sowie 2 Prüfstände.
+
+Wir suchen einen Lieferanten für industrielle Antriebs- und Getriebesysteme für dieses Werk. Es handelt sich um einen Rahmenauftrag der sowohl die Erstausstattung als auch den laufenden Betrieb (Ersatzteile, Service) umfasst.
+
+---
+
+## 2. Technische Anforderungen
+
+### 2.1 Servoantriebe (Pos. 1)
+
+**Menge:** 60 Stück
+**Nennleistung:** 22 kW
+**Pflichtanforderungen:**
+- Integrierte Sicherheitsfunktionen: STO, SS1, SLS (Safety-Integrated)
+- Feldbusschnittstelle: **PROFINET UND EtherCAT** — beide Protokolle müssen nativ unterstützt werden (kein Konverter)
+- Schutzklasse: min. IP65
+- Encoder: Multiturn-Absolutencoder, batterielose Ausführung
+- Zertifizierungen: CE, SIL2, UL
+
+**Wünschenswert:**
+- Cloud-Parametrierung und Ferndiagnose
+- DSGVO-konforme Datenverarbeitung bei Remote-Funktionen
+
+### 2.2 Präzisionsgetriebe (Pos. 2)
+
+**Menge:** 30 Stück
+**Max. Drehmoment:** 3.000 Nm
+**Übersetzungsbereich:** 10:1 bis 250:1
+**Pflichtanforderungen:**
+- Spielfreiheit: ≤1 Bogenminute
+- Lebensdauerschmierung
+- IP65 Standard
+- Flanschkompatibilität mit Antrieben aus Pos. 1
+
+**Wünschenswert:**
+- IoT-fähige Ausführung (Temperatur- und Vibrationsüberwachung)
+
+### 2.3 Wartung und Service (Pos. 3)
+
+Für die gesamte installierte Basis (Pos. 1 + 2) wird ein Servicevertrag gesucht mit:
+- Reaktionszeit Vor-Ort: max. 8 Stunden (Bratislava-Standort)
+- 24/7-Hotline
+- Ersatzteil-Verfügbarkeit: Kritische Teile innerhalb 24h am Standort
+- Vertragslaufzeit: 36 Monate mit Verlängerungsoption
+- **Reporting:** Vierteljährliche Berichte zu Anlagenverfügbarkeit und präventiven Maßnahmen
+
+---
+
+## 3. Kommerzielle Anforderungen
+
+### 3.1 Preisstruktur
+Bitte gliedern Sie Ihr Angebot nach:
+- Einzelpreis je Antrieb (Pos. 1)
+- Einzelpreis je Getriebe (Pos. 2)
+- Jahrespreis Servicevertrag (Pos. 3)
+- Gesamtpreis Erstausstattung
+
+### 3.2 Lieferzeit
+**Verbindliche Anforderung:** Gesamtlieferung bis spätestens **15. September 2025** (12 Wochen nach Auftragserteilung, geplant ca. 15. Juni 2025). Lieferverzug wird mit 0,5% des Auftragswerts je angefangener Woche Verzug vertraglich vereinbart.
+
+### 3.3 Zahlungsbedingungen
+Brenner-Standard: **60 Tage netto** ab Lieferung und Rechnungseingang.
+Anzahlungen werden grundsätzlich nicht geleistet.
+Bitte bestätigen Sie Akzeptanz oder nennen Sie Alternativen.
+
+### 3.4 Rahmenvertrag
+Wir beabsichtigen, mit dem beauftragten Lieferanten einen **3-Jahres-Rahmenvertrag** für Nachbestellungen und Ersatzteile abzuschließen. Preise sollen für 24 Monate festgeschrieben werden.
+
+---
+
+## 4. Bewertungskriterien
+
+Angebote werden nach folgenden Kriterien bewertet:
+
+| Kriterium | Gewichtung |
+|---|---|
+| Technische Eignung (Erfüllung Pflichtanforderungen) | 35% |
+| Gesamtpreis (TCO 3 Jahre) | 30% |
+| Lieferzuverlässigkeit / Referenzen | 20% |
+| Service-Kapazität Bratislava / DACH | 10% |
+| Nachhaltigkeit / CO₂-Reporting | 5% |
+
+Angebote die Pflichtanforderungen nicht vollständig erfüllen werden nicht weiter berücksichtigt.
+
+---
+
+## 5. Formale Anforderungen
+
+Bitte reichen Sie ein:
+1. Technisches Datenblatt je Produkttyp (auf Englisch oder Deutsch)
+2. Ausgefülltes Preisblatt (Vorlage folgt als Anlage)
+3. Referenzliste ≥3 vergleichbare Projekte (Automotive-Segment bevorzugt)
+4. Zertifikate (CE, SIL2, UL)
+5. Servicekonzept Bratislava mit Techniker-Ressourcen und Reaktionszeit-Nachweis
+6. Bestätigung oder Gegenvorschlag zu Zahlungsbedingungen
+7. DSGVO-Konformitätserklärung für Remote-Funktionen
+
+---
+
+## 6. Rückfragen
+
+Technische Rückfragen: Herr Marek Kowalczyk, Fabrikleiter Bratislava (m.kowalczyk@brenner-automotive.com)
+Kommerzielle Rückfragen: Frau Ingrid Hoffmann (i.hoffmann@brenner-automotive.de)
+
+Rückfragen nur schriftlich, bis **09. Mai 2025**.
+
+---
+
+*Brenner Automotive Systems AG behält sich vor, Angebote ohne Angabe von Gründen abzulehnen. Dieses RFQ stellt keine Bestellung und keine Verpflichtung zum Vertragsschluss dar.*`;
+
 let isLoading = false;
+let docStripOpen = false;
 
 function handleKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
@@ -681,11 +900,49 @@ function sendDemo(type) {
   sendMessage();
 }
 
+function toggleDocStrip() {
+  docStripOpen = !docStripOpen;
+  const strip = document.getElementById('docStrip');
+  const btn = document.getElementById('attachBtn');
+  const row = document.getElementById('inputRow');
+  strip.classList.toggle('visible', docStripOpen);
+  btn.classList.toggle('active', docStripOpen);
+  row.classList.toggle('has-doc', docStripOpen || !!document.getElementById('docArea').value.trim());
+  if (docStripOpen) document.getElementById('docArea').focus();
+}
+
+function updateDocState() {
+  const doc = document.getElementById('docArea').value;
+  document.getElementById('docCharCount').textContent = doc.length.toLocaleString('de') + ' Zeichen';
+  const hasDoc = doc.trim().length > 0;
+  document.getElementById('attachedChip').classList.toggle('visible', hasDoc);
+  if (hasDoc) document.getElementById('chipLabel').textContent = `Dokument · ${doc.length.toLocaleString('de')} Zeichen`;
+  document.getElementById('inputRow').classList.toggle('has-doc', hasDoc || docStripOpen);
+}
+
+function clearDoc() {
+  document.getElementById('docArea').value = '';
+  updateDocState();
+  if (docStripOpen) toggleDocStrip();
+}
+
+function loadRfpDemo() {
+  if (!docStripOpen) toggleDocStrip();
+  document.getElementById('docArea').value = BRENNER_RFQ;
+  updateDocState();
+  const input = document.getElementById('inputField');
+  input.value = 'Ich habe gerade diesen RFQ erhalten. Analysiere ihn: Welche Anforderungen können wir erfüllen, welche nicht? Wo gibt es Konflikte mit unseren internen Daten (DoA, SLA, Roadmap)? Was muss ich vor der Antwort klären?';
+  autoResize(input);
+  input.focus();
+}
+
 async function sendMessage() {
   if (isLoading) return;
   const input = document.getElementById('inputField');
   const text = input.value.trim();
   if (!text) return;
+
+  const attachedDoc = document.getElementById('docArea').value.trim();
 
   isLoading = true;
   document.getElementById('sendBtn').disabled = true;
@@ -701,10 +958,23 @@ async function sendMessage() {
   // User message
   const userMsg = document.createElement('div');
   userMsg.className = 'message user';
-  userMsg.innerHTML = `
-    <div class="msg-avatar">👤</div>
-    <div class="msg-bubble">${escapeHtml(text)}</div>
-  `;
+  let userBubbleHtml = '';
+  if (attachedDoc) {
+    const snippet = escapeHtml(attachedDoc.slice(0, 120)) + (attachedDoc.length > 120 ? ' …' : '');
+    userBubbleHtml = `
+      <div class="ext-doc-bubble">
+        <span class="ext-icon">📄</span>
+        <div class="ext-doc-preview">
+          <div class="ext-title">Externes Dokument · ${attachedDoc.length.toLocaleString('de')} Zeichen</div>
+          <div class="ext-snippet">${snippet}</div>
+        </div>
+      </div>
+      <div class="msg-bubble">${escapeHtml(text)}</div>
+    `;
+  } else {
+    userBubbleHtml = `<div class="msg-bubble">${escapeHtml(text)}</div>`;
+  }
+  userMsg.innerHTML = `<div class="msg-avatar">👤</div><div class="msg-content">${userBubbleHtml}</div>`;
   messages.appendChild(userMsg);
 
   // Thinking indicator
@@ -714,7 +984,7 @@ async function sendMessage() {
     <div class="msg-avatar">🧠</div>
     <div class="thinking">
       <div class="thinking-dots"><span></span><span></span><span></span></div>
-      <span>Analysiere Wissensbasis …</span>
+      <span>${attachedDoc ? 'Analysiere Dokument gegen Wissensbasis …' : 'Analysiere Wissensbasis …'}</span>
     </div>
   `;
   messages.appendChild(thinking);
@@ -722,6 +992,11 @@ async function sendMessage() {
 
   // Reset Source-Highlighting from prior turn
   resetSourceHighlights();
+
+  // Clear doc after queuing
+  document.getElementById('docArea').value = '';
+  updateDocState();
+  if (docStripOpen) toggleDocStrip();
 
   // Assistant message scaffolding (reasoning trace + bubble)
   const assistantMsg = document.createElement('div');
@@ -762,7 +1037,7 @@ async function sendMessage() {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text })
+      body: JSON.stringify({ message: text, attached_doc: attachedDoc })
     });
 
     const reader = response.body.getReader();
