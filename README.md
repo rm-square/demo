@@ -1,5 +1,10 @@
 # Revenue Second Brain — Demo
 
+> **Status-Update für Ramin (2026-05-05):**
+> Letzter Stand: Chat hat jetzt Multi-Turn-History (Follow-ups wie "speichere das" funktionieren), Write-Back ins Brain ist live (gespeicherte Dokumente landen sofort in der KB), Teams-Transkript für Müller QBR als Upload-Dokument vorhanden, Wissensgraph zeigt Konflikte nur noch dynamisch nach Chat-Queries.
+>
+> **Next:** Wir bauen `demo-real/` — eine zweite Instanz der Demo mit bewusst schmutziger Datenbasis. Ziel: die drei Schiefstände aus unserem BDC-Paper nachbilden (Entity Resolution, Metrik-Definitionskonflikte, temporale Inkonsistenz) + CRM-Garbage, Silo-Daten, veraltete Battle Cards. Realistisches €100M/1000-MA-Szenario statt Ideal-Demo. Wir können damit testen wie das System mit echter Datenmessiness umgeht und wo es weich versagt.
+
 Interaktive Demo des Revenue Second Brain Konzepts. Fiktives Unternehmen: **Hartmann Antriebstechnik GmbH** (720 MA, €95M Umsatz, DACH-Mittelstand, Antriebstechnik).
 
 Zeigt wie Claude Opus 4.7 über 15 vernetzte Unternehmensdokumente aus dem GTM-Bereich reasont — nicht nur Q&A, sondern Execution: RFP-Antworten, Meeting-Briefings, Pricing-Entscheidungen, Konflikt-Detektion.
