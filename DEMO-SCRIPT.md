@@ -12,7 +12,7 @@ Der Brain enthält 21 interne Hartmann-Dokumente (Produkte, Preise, Kunden, Pipe
 
 ### Schritt 1: RFQ einfügen
 1. Klick auf **📎** (Büroklammer, links neben dem Eingabefeld)
-2. Öffne `~/rm-square/demo/hartmann/customers/_rfp-brenner-bratislava-2025.md` in einem Texteditor
+2. Öffne `~/rm-square/demo/hartmann/customers/REQUEST FOR QUOTATION.docx` in Word oder TextEdit
 3. Alles markieren (`Cmd+A`) und in den grauen Dokumentbereich einfügen
 
 ### Schritt 2: Frage eingeben
@@ -32,7 +32,7 @@ Was muss ich vor der Antwort klären?
 
 ---
 
-## Szenario 2 — Termivorbereitung: QBR Müller Maschinenbau
+## Szenario 2 — Terminvorbereitung: QBR Müller Maschinenbau
 
 **Was es zeigt:** Cross-Document-Intelligenz über Kunden-Account hinweg — Eskalationen, Gesprächspartner-Profil, offene Risiken, Verhandlungsposition, alles in einem Zug.
 
@@ -80,7 +80,7 @@ Gib mir eine konkrete Pricing-Empfehlung:
 - Listenpreis-Kalkulation pro Position mit Hartmann-Preisblatt-Zahlen
 - **⚠️ DoA-Schwelle:** >12% Rabatt (= unter ~€713K) → Regional Director Freigabe. >18% → VP Sales
 - **🚨 Battle Card Konflikt:** Siemens bietet SINAMICS S200 an — Battle Card sagt wir gewinnen auf Safety-Integration (SIL2 nativ), verlieren auf Lieferzeit wenn EtherCAT-Gateway nötig
-- Empfehlung: 8% Eigenrabatt anbieten (€745K), Gegenleistung: 36M CareConnect Premium statt Basic, 3-Jahres-Rahmenvertrag
+- **Empfehlung:** 8% Eigenrabatt anbieten (€745K), Gegenleistung: 36M CareConnect Premium statt Basic, 3-Jahres-Rahmenvertrag
 - Quellen: Preisliste, DoA, Battle Card Siemens, Produktblatt SDX-22
 
 ---
@@ -100,7 +100,7 @@ Ich bin Head of Sales. Zeig mir alle aktiven Pipeline-Risiken:
 
 ### Was du siehst
 - **🚨 Pieters Manufacturing:** SEW-Eurodrive hat ein Angebot eingereicht, Pieters war 3 Wochen nicht erreichbar — Deal auf Kippe
-- **⚠️ HR × Pipeline:** AE Stefan Weber (Owner von 2 großen Deals) hat in der HR-Planung ein Entwicklungsgespräch-Flag — Fluktionsrisiko sollte proaktiv adressiert werden
+- **⚠️ HR × Pipeline:** AE Stefan Weber (Owner von 2 großen Deals) hat in der HR-Planung ein Entwicklungsgespräch-Flag — Fluktuationsrisiko sollte proaktiv adressiert werden
 - **Renewal-Cluster:** KME und Voigt laufen in Q3 aus, KME hatte CS-Probleme → höheres Churn-Risiko
 - Priorisierungsliste mit konkreten nächsten Schritten
 - Quellen: Pipeline, Win-Loss, AE-Performance, HR-Planung, CRM-Log
@@ -131,7 +131,7 @@ Was muss ich konkret tun und bis wann?
 
 ## Bonus: Externer Vertrag analysieren
 
-**Für ein weiteres Live-Szenario:** Kopiere irgendeine Vertragsklausel oder AGB-Passage in das 📎-Feld (z.B. eine Lieferbedingung mit ungewöhnlichen Haftungsklauseln) und frage:
+Für ein weiteres Live-Szenario: Kopiere irgendeine Vertragsklausel oder AGB-Passage in das 📎-Feld (z.B. eine Lieferbedingung mit ungewöhnlichen Haftungsklauseln) und frage:
 
 ```
 Analysiere diese Vertragsklausel gegen unsere Standard-AGB und DoA.
