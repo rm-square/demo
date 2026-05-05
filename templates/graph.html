@@ -139,7 +139,7 @@ svg { width: 100%; height: 100%; }
 <div class="topbar">
   <div>
     <div class="topbar-title">Wissensgraph — Hartmann Antriebstechnik GmbH</div>
-    <div class="topbar-sub" id="stats-sub">22 Dokumente · Klick auf Node für Details</div>
+    <div class="topbar-sub" id="stats-sub">21 Dokumente · Klick auf Node für Details</div>
   </div>
   <div class="topbar-right">
     <span class="tb-btn" onclick="collapseAll()">↺ Einklappen</span>
@@ -166,7 +166,7 @@ svg { width: 100%; height: 100%; }
     <div class="leg-hint">Klick: Details + Aufklappen<br>Hintergrund: Auswahl aufheben<br>Drag: verschieben · Scroll: Zoom</div>
   </div>
   <div class="stats-bar" id="stats-bar">
-    <div class="s-pill"><div class="s-num" id="stat-nodes">22</div><div class="s-lbl">Nodes</div></div>
+    <div class="s-pill"><div class="s-num" id="stat-nodes">21</div><div class="s-lbl">Nodes</div></div>
     <div class="s-pill"><div class="s-num" id="stat-links">0</div><div class="s-lbl">Links</div></div>
     <div class="s-pill"><div class="s-num" id="stat-exp">0</div><div class="s-lbl">Aufgeklappt</div></div>
     <div class="s-pill"><div class="s-num" style="color:#fca5a5" id="stat-conf">0</div><div class="s-lbl">Konflikte</div></div>
@@ -207,7 +207,6 @@ const PARENTS = [
   { id:"leads",        short:"Leads",       label:"Lead Management",         domain:"Marketing",    color:"#06b6d4", desc:"MQL/SQL-Definitionen, 24h SLA (38% Verstoß), 3 aktive Kampagnen, Content-Bibliothek" },
   { id:"accounts",     short:"Accounts",    label:"Kundenaccounts",          domain:"Kunden/CS",    color:"#ef4444", desc:"5 Accounts: Müller, Brenner, Zeller, KME, Bergmann. Deal-Historien + Signale." },
   { id:"csdashboard",  short:"CS Dashboard",label:"CS Dashboard Q1/25",      domain:"Kunden/CS",    color:"#ef4444", desc:"3 offene Eskalationen, NPS 52, 23 Renewals Q2/Q3, fehlende Teamlead-Stelle" },
-  { id:"rfp",          short:"RFP Brenner", label:"RFP Brenner Bratislava",  domain:"Kunden/CS",    color:"#ef4444", desc:"€740K RFQ. 60x SDX-22 SI + 30x PD-3000 + CareConnect 36M. Frist 23. Mai. Siemens Wettbewerber." },
   { id:"winloss",      short:"Win/Loss",    label:"Win/Loss Analyse 2024/25", domain:"Commercial",  color:"#f59e0b", desc:"47 Deals Q3/2024–Q1/2025. Win-Rate 61.7%. Siemens-Verluste durch Perception, nicht Preis. CareConnect im Bundle +25–33% Win-Rate-Uplift." },
   { id:"aeperf",       short:"AE Perf.",    label:"AE Performance Q1/2025",  domain:"Commercial",   color:"#f59e0b", desc:"8 AEs: Zimmermann Top (74% WR, 22 Akt/W). Schreiber kritisch (39% WR, PIP 15.Mai). Stage Velocity 9.8W vs. 7.2W Benchmark." },
   { id:"renewalforecast", short:"Renewal FC", label:"Renewal Forecast Q2/Q3", domain:"Kunden/CS",  color:"#ef4444", desc:"23 Verträge, €1.248K ARR. KME 85% Churn-Risiko. Q1/2025 71% Rate = schlechtestes Quartal seit Start. Upsell-Potenzial €49K ARR." },
@@ -287,12 +286,6 @@ const CHILDREN = [
   { id:"esc-mueller",    short:"Esk. Müller",      label:"Eskalation #0287 Müller",    parent:"csdashboard", color:"#ef4444", desc:"SLA-Verletzung: PD-500 Ersatzteil nach 36h (SLA: 24h). Koch wartet auf QBR als Druckmittel." },
   { id:"esc-bratislava", short:"Esk. Bratislava",  label:"Eskalation #0341 Bratislava",parent:"csdashboard", color:"#ef4444", desc:"RFQ fordert 8h SLA Bratislava. Aktuell nur 2 Techniker. COO: 3 neue bis Q3 genehmigt." },
   { id:"esc-renewals",   short:"23 Renewals",      label:"23 Renewals Watchlist",      parent:"csdashboard", color:"#ef4444", desc:"Hochrisiko: KME (kein CC), Müller (SLA-Konflikt), Hörmann (kein Kontakt 4M), Zeller (Upsell)." },
-  // RFP
-  { id:"rfp-pos1",    short:"Pos.1: 60x SDX-22",   label:"RFQ Pos.1: 60x SDX-22 SI",       parent:"rfp", color:"#ef4444", desc:"Pflicht: PROFINET+EtherCAT NATIV, SIL2, IP65, Multiturn-Absolutencoder, batterieloses. DSGVO Remote." },
-  { id:"rfp-pos2",    short:"Pos.2: 30x PD-3000",  label:"RFQ Pos.2: 30x PD-3000",          parent:"rfp", color:"#ef4444", desc:"Pflicht: ≤1' Spiel, Lebensdauerschmierung, IP65, Flanschkompatibel SDX-22. Wunsch: IoT-fähig." },
-  { id:"rfp-pos3",    short:"Pos.3: CareConnect",  label:"RFQ Pos.3: CareConnect 36M",       parent:"rfp", color:"#ef4444", desc:"8h Vor-Ort Bratislava, 24/7 Hotline, Ersatzteil 24h Standort, QBRs, DSGVO-Konformitätserklärung." },
-  { id:"rfp-terms",   short:"60T / kein Anz.",     label:"Kommerzielle Bedingungen RFQ",     parent:"rfp", color:"#ef4444", desc:"60T netto, keine Anzahlung. Lieferfrist 15. Sept (12 Wochen). Pönale 0,5%/W max 5%. Rahmenvertrag 3J." },
-  { id:"rfp-criteria",short:"Bewertungskriterien", label:"RFQ Bewertungskriterien",           parent:"rfp", color:"#ef4444", desc:"35% Technik · 30% Preis TCO3J · 20% Lieferzuverlässigkeit/Referenzen · 10% Service Bratislava · 5% CO₂." },
   // Win/Loss Analyse
   { id:"wl-rates",    short:"Win-Rates",        label:"Win-Rates je Wettbewerber",     parent:"winloss", color:"#f59e0b", desc:"vs. SEW: 71% · vs. Bonfiglioli: 71% · Sole Source: 90% · vs. Siemens: nur 36%." },
   { id:"wl-siemens",  short:"Siemens Problem ⚠️",label:"Siemens: Perception, nicht Preis",parent:"winloss",color:"#f59e0b", desc:"5 von 7 Siemens-Niederlagen: 'Siemens ist sicherer/zuverlässiger'. Battle Card adressiert Preis — falscher Ansatz." },
@@ -346,7 +339,6 @@ const PARENT_LINKS = [
   { source:"produkte",     target:"battlecards", label:"TwinBus vs. Siemens, DigiLink vs. SEW" },
   { source:"produkte",     target:"accounts",    label:"Installierte Basis je Account" },
   { source:"produkte",     target:"csdashboard", label:"E-Code 0x4210, Bratislava-Kapazität" },
-  { source:"produkte",     target:"rfp",         label:"SDX-22 SI + PD-3000 im RFQ" },
   { source:"roadmap",      target:"salesplays",  label:"Was darf versprochen werden?" },
   { source:"roadmap",      target:"battlecards", label:"Safety-Integrated als Siemens-Argument" },
   { source:"roadmap",      target:"accounts",    label:"DigiLink-Anfrage Müller-Konstrukteur" },
@@ -354,28 +346,21 @@ const PARENT_LINKS = [
   { source:"preisliste",   target:"dealdesk",    label:"DB-Mindestgrenzen, Kalkulation" },
   { source:"preisliste",   target:"salesplays",  label:"Mengenrabatt als Verhandlungshebel" },
   { source:"preisliste",   target:"battlecards", label:"TCO-Argument vs. Wettbewerb" },
-  { source:"preisliste",   target:"rfp",         label:"Kalkulation 60x SDX-22 + 30x PD-3000" },
   { source:"preisliste",   target:"accounts",    label:"Jahresumsätze + Rabattstufen-Zuordnung" },
   { source:"dealdesk",     target:"doa",         label:"Freigabepfad = DoA (>10% → Deal Desk)" },
   { source:"dealdesk",     target:"vertragsklauseln", label:"Was kann Deal Desk freigeben?" },
   { source:"dealdesk",     target:"quota",       label:"72 Deals, Stage-Profil, Forecast" },
-  { source:"dealdesk",     target:"rfp",         conflict:true, label:"60T + kein Anzahlung = CFO-Eskalation", conflictLabel:"🚨 Brenner RFQ: 60T netto + kein Anzahlung → überschreitet AE-Kompetenz (AE-Limit: 30T/30%)" },
   { source:"quota",        target:"accounts",    label:"Brenner dominiert Key-Account-Forecast" },
   { source:"quota",        target:"csdashboard", label:"23 Renewals Q2/Q3 = Pipeline-Komponente" },
   { source:"quota",        target:"leads",       label:"SQLs → Opportunities → Pipeline" },
   { source:"doa",          target:"vertragsklauseln", label:"Beide Schichten der Vertragshoheit" },
-  { source:"doa",          target:"rfp",         conflict:true, label:"RFQ-Bedingungen überschreiten AE-Kompetenz", conflictLabel:"🚨 60T Zahlungsziel + Anzahlungsverzicht >€200K → beide Punkte brauchen CFO-Freigabe" },
   { source:"doa",          target:"csdashboard", label:"Kulanzfreigaben: ≤€5K CSM, ≤€25K CRO" },
-  { source:"vertragsklauseln", target:"rfp",     label:"Pönalen 0,5%/W — Brenner fordert selben Standard" },
   { source:"salesplays",   target:"battlecards", label:"Einwand-Handling + Competitive-Vergleich" },
   { source:"salesplays",   target:"accounts",    label:"Play 2 bei Müller/Zeller, Play 3 bei KME" },
   { source:"salesplays",   target:"doa",         label:"Rabattfreigaben in Play-Prozess integriert" },
-  { source:"battlecards",  target:"rfp",         label:"Siemens Hauptwettbewerber Bratislava" },
   { source:"leads",        target:"accounts",    label:"Lead → SQL → Opportunity → Account" },
   { source:"leads",        target:"quota",       label:"38% SLA-Verstoß → Pipeline-Leck" },
   { source:"accounts",     target:"csdashboard", conflict:true, label:"AE kennt CS-Eskalationen nicht", conflictLabel:"🚨 AE geht in QBR Müller am 15. Mai ohne Wissen über offene SLA-Verletzung + Koch's Druckmittel" },
-  { source:"accounts",     target:"rfp",         label:"Brenner ist RFQ-Absender (KAM Stern)" },
-  { source:"csdashboard",  target:"rfp",         conflict:true, label:"Bratislava: 2 Techniker, 8h SLA nicht erfüllbar", conflictLabel:"🚨 RFQ Pos.3 fordert 8h Vor-Ort Bratislava — intern aktuell nur 48h garantierbar (2 Techniker)" },
   { source:"csdashboard",  target:"quota",       label:"Churn Q1: 2 Kündigungen, NRR 108%" },
   // Win/Loss Analyse
   { source:"winloss",    target:"battlecards",  conflict:true,  label:"Siemens Battle Card: falscher Fokus", conflictLabel:"🚨 Win-Loss zeigt: 5/7 Siemens-Niederlagen durch Perception ('sicherer'), nicht Preis — Battle Card adressiert das Falsche" },
@@ -418,16 +403,7 @@ const CROSS_LINKS = [
   { source:"acc-mueller",    target:"esc-mueller",    conflict:true, label:"Offene SLA-Verletzung",          conflictLabel:"🚨 QBR 15.Mai: Koch nutzt Eskalation als Verhandlungshebel. AE weiß nichts davon." },
   { source:"acc-kme",        target:"esc-kme",         conflict:true, label:"E-Code 0x4210 offen",            conflictLabel:"🚨 Neukunde droht Rückwechsel zu SEW. Service-Termin 08.Mai ist entscheidend." },
   { source:"acc-brenner",    target:"esc-bratislava",  conflict:true, label:"Bratislava SLA nicht erfüllbar", conflictLabel:"🚨 Brenner RFQ fordert 8h SLA — aktuell nur 2 Techniker (48h realistisch)" },
-  { source:"acc-brenner",    target:"rfp-pos1",        label:"Brenner benötigt 60x SDX-22 SI" },
-  { source:"acc-brenner",    target:"rfp-pos2",        label:"Brenner benötigt 30x PD-3000" },
-  { source:"acc-brenner",    target:"rfp-terms",       conflict:true, label:"60T netto > AE-Kompetenz",       conflictLabel:"🚨 60T + kein Anzahlung = CRO+CFO Pflicht (AE-Limit: 30T/30% Anzahlung)" },
-  { source:"rfp-pos1",       target:"prod-sdx",        label:"SDX-22 Safety-Integrated im RFQ" },
-  { source:"rfp-pos2",       target:"prod-pd",         label:"PD-3000 im RFQ" },
-  { source:"rfp-pos3",       target:"prod-cc",         label:"CareConnect Premium 36M" },
-  { source:"rfp-pos1",       target:"road-limits",     conflict:true, label:"TwinBus SDX-22: Feldtest läuft noch", conflictLabel:"🚨 RFQ fordert PROFINET+EtherCAT nativ — SDX-22 TwinBus noch nicht vollständig freigegeben!" },
-  { source:"rfp-terms",      target:"doa-zahlung",     conflict:true, label:"60T überschreitet Kompetenz",    conflictLabel:"🚨 Brenner 60T → CRO+CFO Freigabe. Kein Anzahlung bei €740K → CFO Pflicht." },
-  { source:"rfp-pos3",       target:"esc-bratislava",  conflict:true, label:"8h SLA in Bratislava",           conflictLabel:"🚨 RFQ Pos.3 verlangt 8h Vor-Ort Bratislava — intern eskaliert, Personalaufbau läuft" },
-  { source:"bc-siemens",     target:"rfp-pos1",        label:"Siemens Hauptwettbewerber für SDX-22" },
+  { source:"bc-siemens",     target:"prod-sdx",        label:"Siemens Hauptwettbewerber SDX-22" },
   { source:"bc-sew",         target:"prod-pd",         label:"SEW vs. PrecisionDrive Lieferzeit" },
   { source:"bc-siemens",     target:"prod-sdx",        label:"SDX-TwinBus als Differenzierung" },
   { source:"messe-hannover", target:"lead-camp3",      label:"Hannover Follow-Up Kampagne ab 10. Mai" },
@@ -439,7 +415,6 @@ const CROSS_LINKS = [
   { source:"acc-brenner",    target:"preis-cc",        label:"CC-Premium 90 Antriebe: ~€75K p.a." },
   { source:"lead-sla",       target:"pipe-gap",        label:"38% SLA-Verstoß → Pipeline-Leck" },
   { source:"acc-bergmann",   target:"pipe-gap",        conflict:true, label:"Inbound €41K unbearbeitet",      conflictLabel:"🚨 Bergmann Inbound €41K — AE Lisa Hofmann in Elternzeit, Vertretung überlastet" },
-  { source:"rfp-criteria",   target:"bc-siemens",      label:"30% Preis-Kriterium: TCO-Argument vorbereiten" },
   { source:"play-expansion", target:"acc-mueller",     label:"Expansion Play: CC-Plus → CC-Premium" },
   { source:"play-competitive",target:"acc-kme",        label:"Competitive Play: Nach Reparatur CC pitchen" },
   { source:"preis-rabatt",   target:"doa-rabatte",     label:"Preisliste + DoA definieren Rabattrahmen gemeinsam" },
